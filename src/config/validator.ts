@@ -23,6 +23,7 @@ const GlobalConfigSchema = Joi.object({
     requireConfirmation: Joi.boolean().default(true),
     autoSave: Joi.boolean().default(true),
     saveInterval: Joi.number().min(1000).default(60000),
+    maxRetries: Joi.number().min(0).max(10).default(3),
   }),
 
   llm: Joi.object({
@@ -62,6 +63,22 @@ const GlobalConfigSchema = Joi.object({
     type: Joi.string().valid('file', 'memory').default('file'),
     snippetDir: Joi.string().default('.workspace/snippets'),
     sessionDir: Joi.string().default('.workspace/sessions'),
+  }),
+
+  retry: Joi.object({
+    maxRetries: Joi.number().min(0).max(10).default(3),
+    baseDelay: Joi.number().min(0).default(1000),
+    maxDelay: Joi.number().min(0).default(60000),
+    fixedDelay: Joi.number().min(0).default(2000),
+    strategy: Joi.string().valid('exponential', 'linear', 'fixed', 'adaptive').default('exponential'),
+  }),
+
+  errorHandling: Joi.object({
+    enableAutoRetry: Joi.boolean().default(true),
+    enableStateRollback: Joi.boolean().default(true),
+    enableFallback: Joi.boolean().default(true),
+    maxSnapshotAge: Joi.number().min(0).default(3600000),
+    maxSnapshots: Joi.number().min(1).default(10),
   }),
 });
 

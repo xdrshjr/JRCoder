@@ -177,6 +177,7 @@ export interface GlobalConfig {
     requireConfirmation: boolean;
     autoSave: boolean;
     saveInterval: number;
+    maxRetries: number;
   };
 
   llm: {
@@ -216,6 +217,22 @@ export interface GlobalConfig {
     type: 'file' | 'memory';
     snippetDir: string;
     sessionDir: string;
+  };
+
+  retry: {
+    maxRetries: number;
+    baseDelay: number;
+    maxDelay: number;
+    fixedDelay: number;
+    strategy: 'exponential' | 'linear' | 'fixed' | 'adaptive';
+  };
+
+  errorHandling: {
+    enableAutoRetry: boolean;
+    enableStateRollback: boolean;
+    enableFallback: boolean;
+    maxSnapshotAge: number;
+    maxSnapshots: number;
   };
 }
 

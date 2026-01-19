@@ -51,10 +51,43 @@ export const CONFIG_PATHS = [
 // ============================================================================
 
 export const ERROR_CODES = {
-  CONFIG_ERROR: 'CONFIG_ERROR',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  TOOL_ERROR: 'TOOL_ERROR',
+  // LLM Errors
+  LLM_TIMEOUT: 'LLM_TIMEOUT',
+  LLM_RATE_LIMIT: 'LLM_RATE_LIMIT',
+  LLM_INVALID_RESPONSE: 'LLM_INVALID_RESPONSE',
+  LLM_API_ERROR: 'LLM_API_ERROR',
   LLM_ERROR: 'LLM_ERROR',
+
+  // Tool Errors
+  TOOL_NOT_FOUND: 'TOOL_NOT_FOUND',
+  TOOL_VALIDATION_ERROR: 'TOOL_VALIDATION_ERROR',
+  TOOL_EXECUTION_ERROR: 'TOOL_EXECUTION_ERROR',
+  TOOL_TIMEOUT: 'TOOL_TIMEOUT',
+  TOOL_ERROR: 'TOOL_ERROR',
+
+  // Config Errors
+  CONFIG_INVALID: 'CONFIG_INVALID',
+  CONFIG_MISSING: 'CONFIG_MISSING',
+  CONFIG_ERROR: 'CONFIG_ERROR',
+
+  // System Errors
+  FILE_NOT_FOUND: 'FILE_NOT_FOUND',
+  PERMISSION_DENIED: 'PERMISSION_DENIED',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  OUT_OF_MEMORY: 'OUT_OF_MEMORY',
+
+  // Other Errors
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
   STORAGE_ERROR: 'STORAGE_ERROR',
+  SECURITY_ERROR: 'SECURITY_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 } as const;
+
+// ============================================================================
+// Retry Configuration
+// ============================================================================
+
+export const DEFAULT_MAX_RETRIES = 3;
+export const DEFAULT_BASE_DELAY = 1000; // 1s
+export const DEFAULT_MAX_DELAY = 60000; // 60s
+export const DEFAULT_FIXED_DELAY = 2000; // 2s

@@ -7,6 +7,14 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { VERSION } from '../index';
+import {
+  runCommand,
+  showConfigCommand,
+  exportConfigCommand,
+  viewLogsCommand,
+  generateReportCommand,
+  listSessionsCommand,
+} from './commands';
 
 const program = new Command();
 
@@ -14,6 +22,10 @@ program
   .name('openjragent')
   .description('OpenJRAgent - Automated Programming Agent')
   .version(VERSION);
+
+// ============================================================================
+// Main Command: Run Agent
+// ============================================================================
 
 program
   .command('run <task>')
@@ -27,23 +39,32 @@ program
   .option('--reflector-model <model>', 'Reflector model name')
   .option('--log-level <level>', 'Log level (debug|info|warn|error)')
   .option('--workspace <path>', 'Workspace directory')
+  .option('--resume <sessionId>', 'Resume from saved session')
   .option('--preset <name>', 'Use configuration preset (fast|quality|local|economy)')
   .action(async (task, options) => {
-    console.log(chalk.cyan('\n🤖 OpenJRAgent v' + VERSION + '\n'));
-    console.log(chalk.yellow('Task:'), task);
-    console.log(chalk.gray('Options:'), options);
-    console.log(
-      chalk.yellow('\n⚠️  Agent core not yet implemented. This is the infrastructure setup.\n')
-    );
+    try {
+      await runCommand(task, options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
   });
+
+// ============================================================================
+// Configuration Commands
+// ============================================================================
 
 program
   .command('config:show')
   .description('Show current configuration')
   .option('-c, --config <path>', 'Config file path')
-  .action(async (_options) => {
-    console.log(chalk.cyan('\n📋 Configuration\n'));
-    console.log(chalk.yellow('⚠️  Config display not yet implemented.\n'));
+  .action(async (options) => {
+    try {
+      await showConfigCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
   });
 
 program
@@ -51,10 +72,73 @@ program
   .description('Export current configuration')
   .option('-c, --config <path>', 'Config file path')
   .option('-o, --output <path>', 'Output file path')
-  .action(async (_options) => {
-    console.log(chalk.cyan('\n📤 Export Configuration\n'));
-    console.log(chalk.yellow('⚠️  Config export not yet implemented.\n'));
+  .action(async (options) => {
+    try {
+      await exportConfigCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
   });
+
+// ============================================================================
+// Log Commands
+// ============================================================================
+
+program
+  .command('logs')
+  .description('View logs')
+  .option('--tail <number>', 'Show last N lines', parseInt, 50)
+  .option('--session <id>', 'Filter by session ID')
+  .option('--level <level>', 'Filter by log level')
+  .option('--follow', 'Follow log output')
+  .action(async (options) => {
+    try {
+      await viewLogsCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ============================================================================
+// Report Commands
+// ============================================================================
+
+program
+  .command('report')
+  .description('Generate execution report')
+  .requiredOption('--session <id>', 'Session ID')
+  .option('--format <format>', 'Report format (markdown|json|html)', 'markdown')
+  .option('-o, --output <path>', 'Output file path')
+  .action(async (options) => {
+    try {
+      await generateReportCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ============================================================================
+// Session Commands
+// ============================================================================
+
+program
+  .command('sessions')
+  .description('List all sessions')
+  .action(async () => {
+    try {
+      await listSessionsCommand();
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ============================================================================
+// Parse and Execute
+// ============================================================================
 
 program.parse(process.argv);
 

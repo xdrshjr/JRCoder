@@ -4,28 +4,29 @@
     "enableReflection": true,
     "requireConfirmation": true,
     "autoSave": true,
-    "saveInterval": 60000
+    "saveInterval": 60000,
+    "maxRetries": 3
   },
   "llm": {
     "planner": {
       "provider": "openai",
-      "model": "gpt-4-turbo-preview",
+      "model": "gpt-4o",
       "temperature": 0.7,
       "maxTokens": 4096,
       "timeout": 60000
     },
     "executor": {
       "provider": "openai",
-      "model": "gpt-4-turbo-preview",
+      "model": "gpt-4o",
       "temperature": 0.3,
       "maxTokens": 4096,
-      "timeout": 120000
+      "timeout": 60000
     },
     "reflector": {
       "provider": "openai",
-      "model": "gpt-3.5-turbo",
+      "model": "gpt-4o",
       "temperature": 0.5,
-      "maxTokens": 2048,
+      "maxTokens": 4096,
       "timeout": 60000
     }
   },
@@ -73,5 +74,19 @@
     "type": "file",
     "snippetDir": ".workspace/snippets",
     "sessionDir": ".workspace/sessions"
+  },
+  "retry": {
+    "maxRetries": 3,
+    "baseDelay": 1000,
+    "maxDelay": 60000,
+    "fixedDelay": 2000,
+    "strategy": "exponential"
+  },
+  "errorHandling": {
+    "enableAutoRetry": true,
+    "enableStateRollback": true,
+    "enableFallback": true,
+    "maxSnapshotAge": 3600000,
+    "maxSnapshots": 10
   }
 }

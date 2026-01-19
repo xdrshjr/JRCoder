@@ -3,7 +3,15 @@
  */
 
 import type { GlobalConfig } from '../types';
-import { DEFAULT_MAX_ITERATIONS, DEFAULT_WORKSPACE_DIR, DEFAULT_LOG_DIR } from '../constants';
+import {
+  DEFAULT_MAX_ITERATIONS,
+  DEFAULT_WORKSPACE_DIR,
+  DEFAULT_LOG_DIR,
+  DEFAULT_MAX_RETRIES,
+  DEFAULT_BASE_DELAY,
+  DEFAULT_MAX_DELAY,
+  DEFAULT_FIXED_DELAY,
+} from '../constants';
 
 export const defaultConfig: GlobalConfig = {
   agent: {
@@ -12,6 +20,7 @@ export const defaultConfig: GlobalConfig = {
     requireConfirmation: true,
     autoSave: true,
     saveInterval: 60000,
+    maxRetries: DEFAULT_MAX_RETRIES,
   },
 
   llm: {
@@ -97,5 +106,21 @@ export const defaultConfig: GlobalConfig = {
     type: 'file',
     snippetDir: '.workspace/snippets',
     sessionDir: '.workspace/sessions',
+  },
+
+  retry: {
+    maxRetries: DEFAULT_MAX_RETRIES,
+    baseDelay: DEFAULT_BASE_DELAY,
+    maxDelay: DEFAULT_MAX_DELAY,
+    fixedDelay: DEFAULT_FIXED_DELAY,
+    strategy: 'exponential',
+  },
+
+  errorHandling: {
+    enableAutoRetry: true,
+    enableStateRollback: true,
+    enableFallback: true,
+    maxSnapshotAge: 3600000,
+    maxSnapshots: 10,
   },
 };
