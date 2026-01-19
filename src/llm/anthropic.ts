@@ -216,14 +216,17 @@ export class AnthropicClient extends BaseLLMClient {
       description: tool.description,
       input_schema: {
         type: 'object',
-        properties: tool.parameters.reduce((acc, param) => {
-          acc[param.name] = {
-            type: param.type,
-            description: param.description,
-            enum: param.enum,
-          };
-          return acc;
-        }, {} as Record<string, any>),
+        properties: tool.parameters.reduce(
+          (acc, param) => {
+            acc[param.name] = {
+              type: param.type,
+              description: param.description,
+              enum: param.enum,
+            };
+            return acc;
+          },
+          {} as Record<string, any>
+        ),
         required: tool.parameters.filter((p) => p.required).map((p) => p.name),
       },
     }));

@@ -2,12 +2,7 @@
  * Base tool class and interfaces
  */
 
-import type {
-  ToolParameter,
-  ToolDefinition,
-  ToolResult,
-  ValidationResult,
-} from '../types';
+import type { ToolParameter, ToolDefinition, ToolResult, ValidationResult } from '../types';
 
 /**
  * Abstract base class for all tools
@@ -42,16 +37,12 @@ export abstract class BaseTool {
         const actualType = Array.isArray(value) ? 'array' : typeof value;
 
         if (actualType !== param.type && value !== null && value !== undefined) {
-          errors.push(
-            `Parameter '${param.name}' expected ${param.type}, got ${actualType}`
-          );
+          errors.push(`Parameter '${param.name}' expected ${param.type}, got ${actualType}`);
         }
 
         // Check enum values
         if (param.enum && !param.enum.includes(value)) {
-          errors.push(
-            `Parameter '${param.name}' must be one of: ${param.enum.join(', ')}`
-          );
+          errors.push(`Parameter '${param.name}' must be one of: ${param.enum.join(', ')}`);
         }
       }
     }

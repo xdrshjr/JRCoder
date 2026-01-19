@@ -70,7 +70,9 @@ const GlobalConfigSchema = Joi.object({
     baseDelay: Joi.number().min(0).default(1000),
     maxDelay: Joi.number().min(0).default(60000),
     fixedDelay: Joi.number().min(0).default(2000),
-    strategy: Joi.string().valid('exponential', 'linear', 'fixed', 'adaptive').default('exponential'),
+    strategy: Joi.string()
+      .valid('exponential', 'linear', 'fixed', 'adaptive')
+      .default('exponential'),
   }),
 
   errorHandling: Joi.object({

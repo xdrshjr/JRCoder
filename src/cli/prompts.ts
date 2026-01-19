@@ -68,10 +68,7 @@ export class PromptManager {
   /**
    * Confirm dangerous operation
    */
-  async confirmDangerousOperation(
-    toolName: string,
-    args: any
-  ): Promise<boolean> {
+  async confirmDangerousOperation(toolName: string, args: any): Promise<boolean> {
     console.log(chalk.yellow(`\n⚠️  危险操作: ${toolName}\n`));
     console.log(chalk.gray('参数：'));
     console.log(chalk.gray(JSON.stringify(args, null, 2)));

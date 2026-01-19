@@ -18,7 +18,7 @@ export class FileReadTool extends BaseTool {
     {
       name: 'path',
       type: 'string',
-      description: '文件路径（相对于工作目录）',
+      description: '文件路径（可以是相对路径或绝对路径。相对路径相对于工作目录，绝对路径可以指向任何位置）',
       required: true,
     },
     {
@@ -80,7 +80,7 @@ export class FileWriteTool extends BaseTool {
     {
       name: 'path',
       type: 'string',
-      description: '文件路径',
+      description: '文件路径（可以是相对路径或绝对路径。相对路径相对于工作目录，绝对路径可以指向任何位置）',
       required: true,
     },
     {
@@ -120,11 +120,15 @@ export class FileWriteTool extends BaseTool {
         await fs.writeFile(safePath, content, 'utf8');
       }
 
+      // Verify file was created
+      const stats = await fs.stat(safePath);
+
       return {
         success: true,
         data: {
           path: filePath,
-          size: content.length,
+          absolutePath: safePath,
+          size: stats.size,
           mode,
         },
       };
@@ -184,6 +188,7 @@ export class FileListTool extends BaseTool {
         success: true,
         data: {
           path: dirPath,
+          absolutePath: safePath,
           count: files.length,
           files: files.map((f) => ({
             name: f.name,
@@ -206,7 +211,9 @@ export class FileListTool extends BaseTool {
     dirPath: string,
     recursive: boolean,
     pattern?: string
-  ): Promise<Array<{ name: string; path: string; isDirectory: boolean; size: number; mtime: number }>> {
+  ): Promise<
+    Array<{ name: string; path: string; isDirectory: boolean; size: number; mtime: number }>
+  > {
     const results: Array<{
       name: string;
       path: string;
@@ -247,10 +254,7 @@ export class FileListTool extends BaseTool {
 
   private matchPattern(filename: string, pattern: string): boolean {
     // Simple glob pattern matching
-    const regexPattern = pattern
-      .replace(/\./g, '\\.')
-      .replace(/\*/g, '.*')
-      .replace(/\?/g, '.');
+    const regexPattern = pattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.');
     const regex = new RegExp(`^${regexPattern}$`, 'i');
     return regex.test(filename);
   }

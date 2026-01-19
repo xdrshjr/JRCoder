@@ -183,9 +183,7 @@ export class LLMManager {
    */
   isReady(): boolean {
     return (
-      this.clients.has('planner') &&
-      this.clients.has('executor') &&
-      this.clients.has('reflector')
+      this.clients.has('planner') && this.clients.has('executor') && this.clients.has('reflector')
     );
   }
 

@@ -34,10 +34,7 @@ export class AgentError extends Error {
    * Check if error is recoverable
    */
   isRecoverable(): boolean {
-    return (
-      this.category === ErrorCategory.RECOVERABLE ||
-      this.category === ErrorCategory.TRANSIENT
-    );
+    return this.category === ErrorCategory.RECOVERABLE || this.category === ErrorCategory.TRANSIENT;
   }
 
   /**
@@ -96,12 +93,9 @@ export class ToolExecutionError extends AgentError {
  */
 export class ToolNotFoundError extends AgentError {
   constructor(toolName: string) {
-    super(
-      `Tool '${toolName}' not found`,
-      ERROR_CODES.TOOL_NOT_FOUND,
-      ErrorCategory.PERMANENT,
-      { toolName }
-    );
+    super(`Tool '${toolName}' not found`, ERROR_CODES.TOOL_NOT_FOUND, ErrorCategory.PERMANENT, {
+      toolName,
+    });
   }
 }
 
@@ -125,16 +119,9 @@ export class ToolTimeoutError extends AgentError {
 export class LLMError extends AgentError {
   constructor(message: string, statusCode?: number, details?: any) {
     const category =
-      statusCode === 429 || statusCode === 503
-        ? ErrorCategory.TRANSIENT
-        : ErrorCategory.PERMANENT;
+      statusCode === 429 || statusCode === 503 ? ErrorCategory.TRANSIENT : ErrorCategory.PERMANENT;
 
-    super(
-      `LLM error: ${message}`,
-      ERROR_CODES.LLM_ERROR,
-      category,
-      { statusCode, ...details }
-    );
+    super(`LLM error: ${message}`, ERROR_CODES.LLM_ERROR, category, { statusCode, ...details });
   }
 }
 
@@ -152,12 +139,7 @@ export class LLMTimeoutError extends AgentError {
  */
 export class LLMRateLimitError extends AgentError {
   constructor(message: string, retryAfter?: number) {
-    super(
-      message,
-      ERROR_CODES.LLM_RATE_LIMIT,
-      ErrorCategory.TRANSIENT,
-      { retryAfter }
-    );
+    super(message, ERROR_CODES.LLM_RATE_LIMIT, ErrorCategory.TRANSIENT, { retryAfter });
   }
 }
 
@@ -166,12 +148,7 @@ export class LLMRateLimitError extends AgentError {
  */
 export class LLMInvalidResponseError extends AgentError {
   constructor(message: string, details?: any) {
-    super(
-      message,
-      ERROR_CODES.LLM_INVALID_RESPONSE,
-      ErrorCategory.RECOVERABLE,
-      details
-    );
+    super(message, ERROR_CODES.LLM_INVALID_RESPONSE, ErrorCategory.RECOVERABLE, details);
   }
 }
 
@@ -208,12 +185,9 @@ export class SecurityError extends AgentError {
  */
 export class FileNotFoundError extends AgentError {
   constructor(filePath: string) {
-    super(
-      `File not found: ${filePath}`,
-      ERROR_CODES.FILE_NOT_FOUND,
-      ErrorCategory.PERMANENT,
-      { filePath }
-    );
+    super(`File not found: ${filePath}`, ERROR_CODES.FILE_NOT_FOUND, ErrorCategory.PERMANENT, {
+      filePath,
+    });
   }
 }
 
@@ -236,11 +210,6 @@ export class PermissionDeniedError extends AgentError {
  */
 export class NetworkError extends AgentError {
   constructor(message: string, details?: any) {
-    super(
-      `Network error: ${message}`,
-      ERROR_CODES.NETWORK_ERROR,
-      ErrorCategory.TRANSIENT,
-      details
-    );
+    super(`Network error: ${message}`, ERROR_CODES.NETWORK_ERROR, ErrorCategory.TRANSIENT, details);
   }
 }

@@ -69,11 +69,7 @@ export async function runCommand(task: string, options: any): Promise<void> {
         display.updateSpinner(`Applied preset: ${options.preset}`);
       } else {
         display.failSpinner(`Unknown preset: ${options.preset}`);
-        console.log(
-          chalk.yellow(
-            `Available presets: ${Object.keys(CONFIG_PRESETS).join(', ')}`
-          )
-        );
+        console.log(chalk.yellow(`Available presets: ${Object.keys(CONFIG_PRESETS).join(', ')}`));
         return;
       }
     }
@@ -120,9 +116,7 @@ export async function showConfigCommand(options: any): Promise<void> {
 
     // Display configuration in a readable format
     console.log(chalk.bold('Agent Settings:'));
-    console.log(
-      `  Max Iterations: ${chalk.yellow(config.agent.maxIterations)}`
-    );
+    console.log(`  Max Iterations: ${chalk.yellow(config.agent.maxIterations)}`);
     console.log(
       `  Reflection: ${chalk.yellow(config.agent.enableReflection ? 'Enabled' : 'Disabled')}`
     );
@@ -250,15 +244,9 @@ export async function listSessionsCommand(): Promise<void> {
       const date = new Date(session.createdAt).toLocaleString();
       const status = session.state.phase;
       const statusColor =
-        status === 'completed'
-          ? chalk.green
-          : status === 'failed'
-            ? chalk.red
-            : chalk.yellow;
+        status === 'completed' ? chalk.green : status === 'failed' ? chalk.red : chalk.yellow;
 
-      console.log(
-        `${index + 1}. ${chalk.bold(session.id)} ${statusColor(`[${status}]`)}`
-      );
+      console.log(`${index + 1}. ${chalk.bold(session.id)} ${statusColor(`[${status}]`)}`);
       console.log(`   Created: ${chalk.gray(date)}`);
       if (session.state.plan) {
         console.log(`   Goal: ${chalk.gray(session.state.plan.goal)}`);

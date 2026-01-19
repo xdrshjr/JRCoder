@@ -72,6 +72,10 @@ export class StateManager {
    * Set the execution plan
    */
   setPlan(plan: Plan): void {
+    if (!plan.tasks || !Array.isArray(plan.tasks)) {
+      this.logger.error('Invalid plan: missing or invalid tasks array');
+      throw new Error('Invalid plan: missing or invalid tasks array');
+    }
     this.state.plan = plan;
     this.logger.info('Plan set', { taskCount: plan.tasks.length });
   }

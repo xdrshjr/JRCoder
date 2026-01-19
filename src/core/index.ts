@@ -61,10 +61,6 @@ export type {
   ErrorHandlerConfig,
 } from './error-handler';
 
-export type {
-  RetryStrategy,
-  RetryConfig,
-  RetryOptions,
-} from './retry-manager';
+export type { RetryStrategy, RetryConfig, RetryOptions } from './retry-manager';
 
 export type { SessionData } from './session-manager';

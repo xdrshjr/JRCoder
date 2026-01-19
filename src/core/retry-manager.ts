@@ -44,10 +44,7 @@ export class RetryManager {
   /**
    * Execute operation with retry logic
    */
-  async withRetry<T>(
-    operation: () => Promise<T>,
-    options: RetryOptions = {}
-  ): Promise<T> {
+  async withRetry<T>(operation: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
     const maxRetries = options.maxRetries ?? this.config.maxRetries;
     const strategy = options.strategy ?? this.config.strategy;
 
@@ -90,11 +87,7 @@ export class RetryManager {
   /**
    * Check if error should be retried
    */
-  private shouldRetry(
-    error: Error,
-    retryCount: number,
-    maxRetries: number
-  ): boolean {
+  private shouldRetry(error: Error, retryCount: number, maxRetries: number): boolean {
     // Exceeded max retries
     if (retryCount >= maxRetries) {
       return false;
@@ -125,11 +118,7 @@ export class RetryManager {
   /**
    * Calculate delay based on strategy
    */
-  private calculateDelay(
-    retryCount: number,
-    strategy: RetryStrategy,
-    error?: Error
-  ): number {
+  private calculateDelay(retryCount: number, strategy: RetryStrategy, error?: Error): number {
     switch (strategy) {
       case 'exponential':
         return this.exponentialBackoff(retryCount);

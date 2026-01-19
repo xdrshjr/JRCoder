@@ -2,14 +2,7 @@
  * Base LLM Client Abstract Class
  */
 
-import type {
-  ILLMClient,
-  ILogger,
-  LLMConfig,
-  LLMRequest,
-  LLMResponse,
-  PricingInfo,
-} from './types';
+import type { ILLMClient, ILogger, LLMConfig, LLMRequest, LLMResponse, PricingInfo } from './types';
 import { LLMError } from '../core/errors';
 
 /**
@@ -70,10 +63,7 @@ export abstract class BaseLLMClient implements ILLMClient {
   /**
    * Retry logic with exponential backoff
    */
-  protected async withRetry<T>(
-    fn: () => Promise<T>,
-    maxRetries: number = 3
-  ): Promise<T> {
+  protected async withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promise<T> {
     let lastError: Error | null = null;
 
     for (let i = 0; i < maxRetries; i++) {

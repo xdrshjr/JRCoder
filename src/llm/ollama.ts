@@ -3,13 +3,7 @@
  */
 
 import { BaseLLMClient } from './client';
-import type {
-  ILogger,
-  LLMConfig,
-  LLMRequest,
-  LLMResponse,
-  PricingInfo,
-} from './types';
+import type { ILogger, LLMConfig, LLMRequest, LLMResponse, PricingInfo } from './types';
 import type { Message, ToolDefinition, ToolCall } from '../types';
 import { LLMError } from '../core/errors';
 
@@ -103,7 +97,7 @@ export class OllamaClient extends BaseLLMClient {
           throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
 
-        return await res.json() as OllamaCompletionResponse;
+        return (await res.json()) as OllamaCompletionResponse;
       });
 
       const result = this.parseResponse(response);
@@ -112,11 +106,10 @@ export class OllamaClient extends BaseLLMClient {
       return result;
     } catch (error) {
       this.logger.error('Ollama chat request failed', error as Error);
-      throw new LLMError(
-        `Ollama request failed: ${(error as Error).message}`,
-        undefined,
-        { model: this.config.model, baseURL: this.baseURL }
-      );
+      throw new LLMError(`Ollama request failed: ${(error as Error).message}`, undefined, {
+        model: this.config.model,
+        baseURL: this.baseURL,
+      });
     }
   }
 
@@ -247,14 +240,17 @@ export class OllamaClient extends BaseLLMClient {
         description: tool.description,
         parameters: {
           type: 'object',
-          properties: tool.parameters.reduce((acc, param) => {
-            acc[param.name] = {
-              type: param.type,
-              description: param.description,
-              enum: param.enum,
-            };
-            return acc;
-          }, {} as Record<string, any>),
+          properties: tool.parameters.reduce(
+            (acc, param) => {
+              acc[param.name] = {
+                type: param.type,
+                description: param.description,
+                enum: param.enum,
+              };
+              return acc;
+            },
+            {} as Record<string, any>
+          ),
           required: tool.parameters.filter((p) => p.required).map((p) => p.name),
         },
       },

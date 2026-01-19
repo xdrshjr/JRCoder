@@ -190,23 +190,16 @@ export class DisplayManager {
   showSummary(state: AgentState): void {
     console.log(chalk.bold('\n📊 Execution Summary\n'));
 
-    const completedTasks =
-      state.plan?.tasks.filter((t) => t.status === 'completed').length || 0;
+    const completedTasks = state.plan?.tasks.filter((t) => t.status === 'completed').length || 0;
     const totalTasks = state.plan?.tasks.length || 0;
 
     console.log(chalk.cyan(`Tasks: ${completedTasks}/${totalTasks} completed`));
-    console.log(
-      chalk.cyan(`Iterations: ${state.currentIteration}/${state.maxIterations}`)
-    );
+    console.log(chalk.cyan(`Iterations: ${state.currentIteration}/${state.maxIterations}`));
     console.log(chalk.cyan(`Total tokens: ${state.metadata.totalTokens}`));
-    console.log(
-      chalk.cyan(`Total cost: $${state.metadata.totalCost.toFixed(4)}`)
-    );
+    console.log(chalk.cyan(`Total cost: $${state.metadata.totalCost.toFixed(4)}`));
     console.log(chalk.cyan(`Tool calls: ${state.metadata.toolCallsCount}`));
 
-    const duration = state.endTime
-      ? state.endTime - state.startTime
-      : Date.now() - state.startTime;
+    const duration = state.endTime ? state.endTime - state.startTime : Date.now() - state.startTime;
     console.log(chalk.cyan(`Duration: ${(duration / 1000).toFixed(2)}s`));
 
     console.log();

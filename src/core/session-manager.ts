@@ -33,18 +33,16 @@ export class SessionManager {
   /**
    * Save current session
    */
-  async saveSession(
-    state: AgentState,
-    config: GlobalConfig,
-    sessionId?: string
-  ): Promise<string> {
+  async saveSession(state: AgentState, config: GlobalConfig, sessionId?: string): Promise<string> {
     const id = sessionId || `session_${Date.now()}`;
 
     const sessionData: SessionData = {
       id,
       state: this.sanitizeState(state),
       config: this.sanitizeConfig(config),
-      createdAt: sessionId ? (await this.storage.load(sessionId))?.createdAt || Date.now() : Date.now(),
+      createdAt: sessionId
+        ? (await this.storage.load(sessionId))?.createdAt || Date.now()
+        : Date.now(),
       updatedAt: Date.now(),
     };
 
@@ -250,10 +248,7 @@ export class SessionManager {
     }
 
     const timestamps = sessions.map((s) => s.updatedAt);
-    const totalSize = sessions.reduce(
-      (sum, s) => sum + JSON.stringify(s).length * 2,
-      0
-    );
+    const totalSize = sessions.reduce((sum, s) => sum + JSON.stringify(s).length * 2, 0);
 
     return {
       totalSessions: sessions.length,

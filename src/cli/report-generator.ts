@@ -26,9 +26,7 @@ export class ReportGenerator {
     report.push(`- **Status**: ${state.phase}`);
     report.push(`- **Iterations**: ${state.currentIteration}/${state.maxIterations}`);
     if (state.endTime) {
-      report.push(
-        `- **Duration**: ${this.formatDuration(state.endTime - state.startTime)}`
-      );
+      report.push(`- **Duration**: ${this.formatDuration(state.endTime - state.startTime)}`);
     }
     report.push('');
 

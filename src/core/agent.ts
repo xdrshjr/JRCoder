@@ -4,7 +4,7 @@
 
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import type { GlobalConfig, Plan } from '../types';
+import type { GlobalConfig, Plan, Task } from '../types';
 import type { ILogger } from '../llm/types';
 import { StateManager } from './state';
 import { Planner } from './planner';
@@ -13,6 +13,7 @@ import { Reflector } from './reflector';
 import { LLMManager } from '../llm/manager';
 import { ToolManager } from '../tools/manager';
 import type { ConfirmationResult } from './types';
+import { generateId } from '../utils';
 
 /**
  * Main Agent class that orchestrates the planning-execution-reflection loop
@@ -45,8 +46,61 @@ export class Agent {
 
     this.stateManager = new StateManager(config, logger);
     this.planner = new Planner(llmManager.getClient('planner'), logger);
-    this.executor = new Executor(llmManager.getClient('executor'), toolManager, logger);
+    this.executor = new Executor(
+      llmManager.getClient('executor'),
+      toolManager,
+      logger,
+      this.stateManager
+    );
     this.reflector = new Reflector(llmManager.getClient('reflector'), logger);
+  }
+
+  /**
+   * Normalize plan to ensure all tasks have required fields
+   */
+  private normalizePlan(plan: Partial<Plan> | Plan, originalGoal: string): Plan {
+    const now = Date.now();
+
+    // Normalize tasks
+    const tasks =
+      plan.tasks?.map((task, index) => {
+        const normalized: Task = {
+          id: task.id || generateId(),
+          title: task.title,
+          description: task.description,
+          status: task.status || 'pending',
+          priority: task.priority || index + 1,
+          dependencies: task.dependencies || [],
+          createdAt: task.createdAt || now,
+          updatedAt: task.updatedAt || now,
+          result: task.result,
+          error: task.error,
+        };
+        return normalized;
+      }) || [];
+
+    // Convert dependency titles to IDs if needed
+    const titleToIdMap = new Map(tasks.map((t) => [t.title, t.id]));
+    tasks.forEach((task) => {
+      task.dependencies = task.dependencies
+        .map((dep) => {
+          // If it's not a valid UUID, treat it as a title
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dep)) {
+            return titleToIdMap.get(dep);
+          }
+          return dep;
+        })
+        .filter((depId): depId is string => depId !== undefined);
+    });
+
+    return {
+      id: plan.id || generateId(),
+      goal: plan.goal || originalGoal,
+      tasks,
+      currentTaskId: plan.currentTaskId,
+      createdAt: plan.createdAt || now,
+      updatedAt: plan.updatedAt || now,
+    };
   }
 
   /**
@@ -56,85 +110,124 @@ export class Agent {
     this.logger.info('Agent started', { task: userTask });
 
     try {
-      // Main loop
-      while (
-        this.stateManager.getState().currentIteration < this.config.agent.maxIterations
-      ) {
-        this.stateManager.incrementIteration();
+      // First iteration: Generate the complete plan
+      this.stateManager.incrementIteration();
 
-        // Phase 1: Planning
-        this.stateManager.updatePhase('planning');
-        const plannerResult = await this.planner.plan(userTask, this.stateManager.getState());
+      // Phase 1: Planning
+      this.stateManager.updatePhase('planning');
+      const plannerResult = await this.planner.plan(userTask, this.stateManager.getState());
 
-        if (plannerResult.type === 'direct_answer') {
-          console.log(chalk.green('\n✅ 答案：\n'));
-          console.log(plannerResult.answer);
-          break;
+      if (plannerResult.type === 'direct_answer') {
+        console.log(chalk.green('\n✅ 答案：\n'));
+        console.log(plannerResult.answer);
+        return;
+      }
+
+      this.stateManager.setPlan(plannerResult.plan);
+
+      // Phase 2: User Confirmation
+      if (this.config.agent.requireConfirmation) {
+        this.stateManager.updatePhase('confirming');
+        const confirmation = await this.userConfirmation(plannerResult.plan);
+
+        if (confirmation.action === 'cancel') {
+          this.logger.info('User cancelled execution');
+          console.log(chalk.yellow('\n⚠️  执行已取消\n'));
+          return;
+        } else if (confirmation.action === 'replan') {
+          // Normalize the modified plan to ensure all required fields are present
+          const normalizedPlan = this.normalizePlan(confirmation.plan!, userTask);
+          this.stateManager.setPlan(normalizedPlan);
         }
+      }
 
-        this.stateManager.setPlan(plannerResult.plan);
-
-        // Phase 2: User Confirmation
-        if (this.config.agent.requireConfirmation) {
-          this.stateManager.updatePhase('confirming');
-          const confirmation = await this.userConfirmation(plannerResult.plan);
-
-          if (confirmation.action === 'cancel') {
-            this.logger.info('User cancelled execution');
-            console.log(chalk.yellow('\n⚠️  执行已取消\n'));
-            break;
-          } else if (confirmation.action === 'replan') {
-            this.stateManager.setPlan(confirmation.plan!);
-          }
-        }
-
+      // Main execution loop
+      while (this.stateManager.getState().currentIteration < this.config.agent.maxIterations) {
         // Phase 3: Executing
         this.stateManager.updatePhase('executing');
+        const currentPlan = this.stateManager.getState().plan!;
         const executionResult = await this.executor.execute(
-          this.stateManager.getState().plan!,
+          currentPlan,
           this.stateManager.getState()
         );
 
-        // Phase 4: Reflecting
-        if (this.config.agent.enableReflection) {
-          this.stateManager.updatePhase('reflecting');
-          const reflectionResult = await this.reflector.reflect(
-            this.stateManager.getState().plan!,
-            executionResult,
-            this.stateManager.getState()
-          );
+        // Update plan with modified task statuses
+        this.stateManager.setPlan(currentPlan);
 
-          if (reflectionResult.nextAction === 'finish') {
-            console.log(chalk.green('\n✅ 任务完成！\n'));
-            if (reflectionResult.summary) {
-              console.log(reflectionResult.summary);
+        // Check if all tasks are completed
+        const allCompleted = this.stateManager
+          .getState()
+          .plan!.tasks.every((t) => t.status === 'completed' || t.status === 'failed');
+
+        if (allCompleted) {
+          // Phase 4: Reflecting
+          if (this.config.agent.enableReflection) {
+            this.stateManager.updatePhase('reflecting');
+            const reflectionResult = await this.reflector.reflect(
+              this.stateManager.getState().plan!,
+              executionResult,
+              this.stateManager.getState()
+            );
+
+            if (reflectionResult.nextAction === 'finish') {
+              console.log(chalk.green('\n✅ 任务完成！\n'));
+              if (reflectionResult.summary) {
+                console.log(reflectionResult.summary);
+              }
+              return;
+            } else if (reflectionResult.nextAction === 'ask_user') {
+              const userResponse = await this.askUser(reflectionResult.question!);
+              userTask = `${userTask}\n\n用户反馈：${userResponse}`;
+              this.stateManager.incrementIteration();
+              continue;
+            } else if (reflectionResult.nextAction === 'replan') {
+              if (reflectionResult.issues && reflectionResult.issues.length > 0) {
+                console.log(chalk.yellow('\n⚠️  发现问题，重新规划：\n'));
+                reflectionResult.issues.forEach((issue) => {
+                  console.log(chalk.yellow(`  - ${issue}`));
+                });
+              }
+              if (
+                reflectionResult.newPlan &&
+                reflectionResult.newPlan.tasks &&
+                Array.isArray(reflectionResult.newPlan.tasks)
+              ) {
+                // Normalize the plan to ensure all required fields are present
+                const normalizedPlan = this.normalizePlan(
+                  reflectionResult.newPlan,
+                  this.stateManager.getState().plan!.goal
+                );
+                this.stateManager.setPlan(normalizedPlan);
+              } else if (reflectionResult.newPlan) {
+                this.logger.warn('Invalid new plan from reflector, missing tasks array');
+                console.log(chalk.yellow('正在重新生成计划...\n'));
+                this.stateManager.updatePhase('planning');
+                const plannerResult = await this.planner.plan(
+                  userTask,
+                  this.stateManager.getState()
+                );
+                if (plannerResult.type !== 'plan') {
+                  this.logger.error('Planner did not return a plan during replan');
+                  throw new Error('重新规划失败');
+                }
+                this.stateManager.setPlan(plannerResult.plan);
+              }
+              this.stateManager.incrementIteration();
+              continue;
             }
-            break;
-          } else if (reflectionResult.nextAction === 'ask_user') {
-            const userResponse = await this.askUser(reflectionResult.question!);
-            userTask = `${userTask}\n\n用户反馈：${userResponse}`;
-            continue;
-          } else if (reflectionResult.nextAction === 'replan') {
-            // Continue to next iteration for replanning
-            if (reflectionResult.issues && reflectionResult.issues.length > 0) {
-              console.log(chalk.yellow('\n⚠️  发现问题，重新规划：\n'));
-              reflectionResult.issues.forEach((issue) => {
-                console.log(chalk.yellow(`  - ${issue}`));
-              });
-            }
-            continue;
+          } else {
+            console.log(chalk.green('\n✅ 执行完成！\n'));
+            return;
           }
         } else {
-          // Reflection disabled, finish after execution
-          console.log(chalk.green('\n✅ 执行完成！\n'));
-          break;
+          // There are still pending tasks, continue execution
+          this.stateManager.incrementIteration();
+          continue;
         }
       }
 
       // Max iterations reached
-      if (
-        this.stateManager.getState().currentIteration >= this.config.agent.maxIterations
-      ) {
+      if (this.stateManager.getState().currentIteration >= this.config.agent.maxIterations) {
         console.log(chalk.yellow('\n⚠️  达到最大迭代次数\n'));
       }
     } catch (error) {

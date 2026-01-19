@@ -80,11 +80,7 @@ export class ShellExecTool extends BaseTool {
     }
   }
 
-  private async execCommand(
-    command: string,
-    cwd?: string,
-    timeout?: number
-  ): Promise<ExecResult> {
+  private async execCommand(command: string, cwd?: string, timeout?: number): Promise<ExecResult> {
     try {
       const { stdout, stderr } = await execAsync(command, {
         cwd: cwd || this.workspaceDir,

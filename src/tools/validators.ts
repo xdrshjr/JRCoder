@@ -14,16 +14,22 @@ export class PathValidator {
    * Validate and normalize a file path
    */
   static validate(filePath: string, workspaceDir: string): string {
+    // Check if path is already absolute
+    const isAbsolute = path.isAbsolute(filePath);
+
     // Resolve to absolute path
-    const absolutePath = path.resolve(workspaceDir, filePath);
+    const absolutePath = isAbsolute ? path.resolve(filePath) : path.resolve(workspaceDir, filePath);
     const normalizedWorkspace = path.resolve(workspaceDir);
 
-    // Prevent path traversal attacks
-    if (!absolutePath.startsWith(normalizedWorkspace)) {
-      throw new ValidationError(
-        'Path is outside workspace directory',
-        { path: filePath, workspace: workspaceDir }
-      );
+    // For relative paths, enforce workspace restrictions
+    // For absolute paths, allow them (user explicitly specified the full path)
+    if (!isAbsolute && !absolutePath.startsWith(normalizedWorkspace)) {
+      throw new ValidationError('Path is outside workspace directory', {
+        path: filePath,
+        absolutePath,
+        workspace: workspaceDir,
+        message: `Path ${absolutePath} is outside workspace ${normalizedWorkspace}`,
+      });
     }
 
     return absolutePath;
@@ -90,10 +96,10 @@ export class CommandValidator {
   static validate(command: string): void {
     for (const pattern of this.DANGEROUS_PATTERNS) {
       if (pattern.test(command)) {
-        throw new ValidationError(
-          'Dangerous command detected and blocked',
-          { command, pattern: pattern.source }
-        );
+        throw new ValidationError('Dangerous command detected and blocked', {
+          command,
+          pattern: pattern.source,
+        });
       }
     }
   }
@@ -122,10 +128,10 @@ export class ExtensionValidator {
     const ext = path.extname(filePath).toLowerCase();
 
     if (allowedExtensions.length > 0 && !allowedExtensions.includes(ext)) {
-      throw new ValidationError(
-        `File extension '${ext}' is not allowed`,
-        { path: filePath, allowed: allowedExtensions }
-      );
+      throw new ValidationError(`File extension '${ext}' is not allowed`, {
+        path: filePath,
+        allowed: allowedExtensions,
+      });
     }
   }
 

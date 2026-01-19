@@ -18,6 +18,7 @@ const REFLECTOR_SYSTEM_PROMPT = `你是一个反思评估器。你的职责是�
 
 评估标准：
 - 目标达成度：是否完成了用户的原始需求
+- 文件创建：是否实际创建了必要的代码文件
 - 代码质量：是否符合最佳实践
 - 错误处理：是否有未处理的错误
 - 完整性：是否有遗漏的功能
@@ -30,15 +31,28 @@ const REFLECTOR_SYSTEM_PROMPT = `你是一个反思评估器。你的职责是�
   "issues": ["问题1", "问题2"],
   "suggestions": ["建议1", "建议2"],
   "question": "需要询问用户的问题（如果blocked）",
-  "improvedPlan": { ... }
+  "improvedPlan": {
+    "goal": "原始目标",
+    "tasks": [
+      {
+        "title": "任务标题",
+        "description": "详细描述",
+        "dependencies": ["依赖任务的ID"]
+      }
+    ]
+  }
 }
 
 注意事项：
 - 客观评估，不要过于乐观或悲观
 - 问题要具体，建议要可行
-- 如果遇到无法解决的问题，设置blocked为true并提出问题
+- **重点检查：是否实际创建了代码文件（使用file_write工具）**
+- **如果任务要求创建代码但只使用了code_query，这是一个严重问题**
+- **只有在遇到真正无法解决的问题时，才设置blocked为true**（例如：权限不足、缺少关键信息、代码结构冲突）
+- 如果只是任务没有完成但可以继续执行，设置blocked为false，goalAchieved为false，并提供改进建议
 - 如果目标已达成，设置goalAchieved为true
-- 如果需要改进，在suggestions中提供具体建议`;
+- 如果需要改进，在suggestions中提供具体建议
+- 如果需要重新规划，提供improvedPlan，必须包含goal字段和tasks数组`;
 
 /**
  * Reflector class for execution evaluation
@@ -120,24 +134,34 @@ export class Reflector {
   /**
    * Build prompt for reflector
    */
-  private buildPrompt(
-    plan: Plan,
-    executionResult: ExecutionResult,
-    context: AgentState
-  ): string {
+  private buildPrompt(plan: Plan, executionResult: ExecutionResult, context: AgentState): string {
     let prompt = `原始目标：${plan.goal}\n\n`;
 
     prompt += `执行结果：\n`;
     prompt += `- 完成任务数：${executionResult.completedTasks}\n`;
-    prompt += `- 失败任务数：${executionResult.failedTasks}\n\n`;
+    prompt += `- 失败任务数：${executionResult.failedTasks}\n`;
+    prompt += `- 工具调用总数：${context.metadata.toolCallsCount}\n\n`;
 
-    prompt += `任务详情：\n`;
+    // Analyze tool usage from conversation
+    const toolUsage = this.analyzeToolUsage(context.conversation.messages);
+    prompt += `工具使用统计：\n`;
+    toolUsage.forEach((count, tool) => {
+      prompt += `- ${tool}: ${count}次\n`;
+    });
+
+    // Check if file_write was used
+    const fileWriteCount = toolUsage.get('file_write') || 0;
+    if (fileWriteCount === 0) {
+      prompt += `\n⚠️ 警告：没有使用file_write工具创建任何文件！\n`;
+    }
+
+    prompt += `\n任务详情：\n`;
     executionResult.results.forEach((r) => {
       const task = plan.tasks.find((t) => t.id === r.taskId);
       if (task) {
         prompt += `- ${task.title}\n`;
         prompt += `  状态: ${r.success ? '成功' : '失败'}\n`;
-        if (r.success && r.output) {
+        if (r.success && r.output && typeof r.output === 'string') {
           const output = r.output.substring(0, 300);
           prompt += `  输出: ${output}${r.output.length > 300 ? '...' : ''}\n`;
         } else if (!r.success && r.error) {
@@ -147,9 +171,35 @@ export class Reflector {
     });
 
     prompt += `\n当前迭代：${context.currentIteration}/${context.maxIterations}\n\n`;
-    prompt += `请评估执行结果，判断是否达成目标，并提出改进建议。`;
+    prompt += `请评估执行结果，判断是否达成目标，并提出改进建议。特别注意是否实际创建了代码文件。`;
 
     return prompt;
+  }
+
+  /**
+   * Analyze tool usage from conversation messages
+   */
+  private analyzeToolUsage(messages: any[]): Map<string, number> {
+    const toolUsage = new Map<string, number>();
+
+    this.logger.info(`Analyzing tool usage from ${messages.length} messages`);
+
+    for (const message of messages) {
+      if (message.role === 'assistant' && message.tool_calls) {
+        this.logger.info(`Found assistant message with ${message.tool_calls.length} tool calls`);
+        for (const toolCall of message.tool_calls) {
+          const toolName = toolCall.name || toolCall.function?.name;
+          if (toolName) {
+            const count = toolUsage.get(toolName) || 0;
+            toolUsage.set(toolName, count + 1);
+            this.logger.info(`Tool usage: ${toolName} (count: ${count + 1})`);
+          }
+        }
+      }
+    }
+
+    this.logger.info(`Total tool usage: ${JSON.stringify(Array.from(toolUsage.entries()))}`);
+    return toolUsage;
   }
 
   /**

@@ -45,10 +45,7 @@ export class FallbackManager {
   /**
    * Execute LLM request with multiple fallbacks
    */
-  async fallbackLLMChain(
-    clients: ILLMClient[],
-    request: LLMRequest
-  ): Promise<LLMResponse> {
+  async fallbackLLMChain(clients: ILLMClient[], request: LLMRequest): Promise<LLMResponse> {
     if (clients.length === 0) {
       throw new Error('No LLM clients provided');
     }
@@ -131,10 +128,9 @@ export class FallbackManager {
     const failed = results.filter((r) => r.status === 'rejected');
     const successRate = successful.length / results.length;
 
-    this.logger.info(
-      `Operations completed: ${successful.length}/${results.length} succeeded`,
-      { successRate }
-    );
+    this.logger.info(`Operations completed: ${successful.length}/${results.length} succeeded`, {
+      successRate,
+    });
 
     if (successRate < minSuccessRate) {
       const errorMessages = failed

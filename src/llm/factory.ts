@@ -32,10 +32,9 @@ export class LLMClientFactory {
         return new OllamaClient(config, logger);
 
       default:
-        throw new ConfigError(
-          `Unsupported LLM provider: ${config.provider}`,
-          { provider: config.provider }
-        );
+        throw new ConfigError(`Unsupported LLM provider: ${config.provider}`, {
+          provider: config.provider,
+        });
     }
   }
 

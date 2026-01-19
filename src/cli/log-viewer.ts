@@ -59,9 +59,7 @@ export class LogViewer {
    * View logs from file
    */
   async viewLogs(options: LogViewOptions): Promise<void> {
-    const logFile = options.session
-      ? `logs/session-${options.session}.log`
-      : 'logs/combined.log';
+    const logFile = options.session ? `logs/session-${options.session}.log` : 'logs/combined.log';
 
     if (!(await fs.pathExists(logFile))) {
       console.log(chalk.yellow(`Log file not found: ${logFile}`));

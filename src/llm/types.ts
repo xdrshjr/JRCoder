@@ -2,13 +2,7 @@
  * LLM Client Type Definitions
  */
 
-import type {
-  LLMConfig,
-  LLMRequest,
-  LLMResponse,
-  ToolDefinition,
-  Message,
-} from '../types';
+import type { LLMConfig, LLMRequest, LLMResponse, ToolDefinition, Message } from '../types';
 
 /**
  * LLM Client Interface

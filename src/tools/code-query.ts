@@ -92,12 +92,7 @@ export class CodeQueryTool extends BaseTool {
     type: string,
     searchPath: string
   ): Promise<SearchResult[]> {
-    const args: string[] = [
-      '--json',
-      '--context', '2',
-      '--line-number',
-      '--column',
-    ];
+    const args: string[] = ['--json', '--context', '2', '--line-number', '--column'];
 
     // Build search pattern based on type
     let pattern = query;

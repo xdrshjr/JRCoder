@@ -204,4 +204,11 @@ export class ToolManager {
   clear(): void {
     this.tools.clear();
   }
+
+  /**
+   * Get workspace directory
+   */
+  getWorkspaceDir(): string {
+    return this.config.workspaceDir;
+  }
 }

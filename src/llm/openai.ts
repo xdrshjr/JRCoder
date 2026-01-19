@@ -119,20 +119,24 @@ export class OpenAIClient extends BaseLLMClient {
     return messages.map((msg) => {
       if (msg.role === 'tool') {
         const toolMsg = msg as any;
+        // Support both toolCallId (camelCase) and tool_call_id (snake_case)
+        const toolCallId = toolMsg.tool_call_id || toolMsg.toolCallId;
         return {
           role: 'tool',
-          tool_call_id: toolMsg.toolCallId,
+          tool_call_id: toolCallId,
           content: msg.content,
         } as ChatCompletionMessageParam;
       }
 
       if (msg.role === 'assistant') {
         const assistantMsg = msg as any;
-        if (assistantMsg.toolCalls && assistantMsg.toolCalls.length > 0) {
+        // Support both toolCalls (camelCase) and tool_calls (snake_case)
+        const toolCalls = assistantMsg.tool_calls || assistantMsg.toolCalls;
+        if (toolCalls && toolCalls.length > 0) {
           return {
             role: 'assistant',
             content: msg.content || null,
-            tool_calls: assistantMsg.toolCalls.map((tc: ToolCall) => ({
+            tool_calls: toolCalls.map((tc: ToolCall) => ({
               id: tc.id,
               type: 'function' as const,
               function: {
@@ -166,14 +170,26 @@ export class OpenAIClient extends BaseLLMClient {
         description: tool.description,
         parameters: {
           type: 'object',
-          properties: tool.parameters.reduce((acc, param) => {
-            acc[param.name] = {
-              type: param.type,
-              description: param.description,
-              enum: param.enum,
-            };
-            return acc;
-          }, {} as Record<string, any>),
+          properties: tool.parameters.reduce(
+            (acc, param) => {
+              const paramDef: any = {
+                type: param.type,
+                description: param.description,
+              };
+
+              if (param.enum) {
+                paramDef.enum = param.enum;
+              }
+
+              if (param.type === 'array') {
+                paramDef.items = { type: 'string' };
+              }
+
+              acc[param.name] = paramDef;
+              return acc;
+            },
+            {} as Record<string, any>
+          ),
           required: tool.parameters.filter((p) => p.required).map((p) => p.name),
         },
       },

@@ -84,19 +84,29 @@ export class Planner {
     }
 
     // Generate execution plan
+    const tasks = (result.tasks || []).map((task, index) => ({
+      id: generateId(),
+      title: task.title,
+      description: task.description,
+      status: 'pending' as const,
+      priority: index + 1,
+      dependencies: task.dependencies || [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }));
+
+    // Convert dependency titles to IDs
+    const titleToIdMap = new Map(tasks.map((t) => [t.title, t.id]));
+    tasks.forEach((task) => {
+      task.dependencies = task.dependencies
+        .map((depTitle) => titleToIdMap.get(depTitle))
+        .filter((depId): depId is string => depId !== undefined);
+    });
+
     const plan: Plan = {
       id: generateId(),
       goal: userTask,
-      tasks: (result.tasks || []).map((task, index) => ({
-        id: generateId(),
-        title: task.title,
-        description: task.description,
-        status: 'pending',
-        priority: index + 1,
-        dependencies: task.dependencies || [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      })),
+      tasks,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };

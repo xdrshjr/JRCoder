@@ -2,12 +2,7 @@
  * Error handler with advanced error handling strategies
  */
 
-import {
-  AgentError,
-  ErrorCategory,
-  LLMTimeoutError,
-  LLMRateLimitError,
-} from './errors';
+import { AgentError, ErrorCategory, LLMTimeoutError, LLMRateLimitError } from './errors';
 import type { ILogger } from '../logger/interfaces';
 import type { AgentPhase } from '../types';
 
@@ -51,10 +46,7 @@ export class ErrorHandler {
   /**
    * Handle error with context and return handling strategy
    */
-  async handle(
-    error: Error,
-    context: ErrorContext
-  ): Promise<ErrorHandlingResult> {
+  async handle(error: Error, context: ErrorContext): Promise<ErrorHandlingResult> {
     // Log error
     this.logger.error('Error occurred', error, context);
 
@@ -98,12 +90,7 @@ export class ErrorHandler {
     }
 
     // Check for network errors
-    const networkErrorCodes = [
-      'ETIMEDOUT',
-      'ECONNRESET',
-      'ENOTFOUND',
-      'ECONNREFUSED',
-    ];
+    const networkErrorCodes = ['ETIMEDOUT', 'ECONNRESET', 'ENOTFOUND', 'ECONNREFUSED'];
     if (networkErrorCodes.some((code) => error.message.includes(code))) {
       return new AgentError(
         error.message,
@@ -127,10 +114,7 @@ export class ErrorHandler {
   /**
    * Handle transient errors (retry)
    */
-  private handleTransientError(
-    error: AgentError,
-    context: ErrorContext
-  ): ErrorHandlingResult {
+  private handleTransientError(error: AgentError, context: ErrorContext): ErrorHandlingResult {
     // Check if we can retry
     if (context.retryCount < this.config.maxRetries) {
       const delay = this.calculateRetryDelay(context.retryCount, error);
@@ -155,10 +139,7 @@ export class ErrorHandler {
   /**
    * Handle recoverable errors (fallback or skip)
    */
-  private handleRecoverableError(
-    error: AgentError,
-    context: ErrorContext
-  ): ErrorHandlingResult {
+  private handleRecoverableError(error: AgentError, context: ErrorContext): ErrorHandlingResult {
     // For tool execution errors, suggest fallback
     if (context.phase === 'executing' && context.toolName) {
       this.logger.info('Recoverable tool error, suggesting fallback');
@@ -177,10 +158,7 @@ export class ErrorHandler {
   /**
    * Handle permanent errors (fail)
    */
-  private handlePermanentError(
-    error: AgentError,
-    _context: ErrorContext
-  ): ErrorHandlingResult {
+  private handlePermanentError(error: AgentError, _context: ErrorContext): ErrorHandlingResult {
     this.logger.error('Permanent error, cannot recover', error);
     return { action: 'fail', error };
   }
@@ -188,10 +166,7 @@ export class ErrorHandler {
   /**
    * Handle critical errors (abort immediately)
    */
-  private handleCriticalError(
-    error: AgentError,
-    _context: ErrorContext
-  ): ErrorHandlingResult {
+  private handleCriticalError(error: AgentError, _context: ErrorContext): ErrorHandlingResult {
     this.logger.error('Critical error, aborting immediately', error);
     return { action: 'abort', error };
   }
