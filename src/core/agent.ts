@@ -27,13 +27,14 @@ export class Agent {
   private config: GlobalConfig;
   private logger: ILogger;
   private toolManager: ToolManager;
+  private llmManager: LLMManager;
 
   constructor(config: GlobalConfig, logger: ILogger) {
     this.config = config;
     this.logger = logger;
 
     // Initialize components
-    const llmManager = new LLMManager(config, logger);
+    this.llmManager = new LLMManager(config, logger);
 
     // Import snippet storage
     const { FileSnippetStorage } = require('../storage/snippet-storage');
@@ -47,14 +48,14 @@ export class Agent {
     );
 
     this.stateManager = new StateManager(config, logger);
-    this.planner = new Planner(llmManager.getClient('planner'), logger);
+    this.planner = new Planner(this.llmManager.getClient('planner'), logger);
     this.executor = new Executor(
-      llmManager.getClient('executor'),
+      this.llmManager.getClient('executor'),
       this.toolManager,
       logger,
       this.stateManager
     );
-    this.reflector = new Reflector(llmManager.getClient('reflector'), logger);
+    this.reflector = new Reflector(this.llmManager.getClient('reflector'), logger);
   }
 
   /**
@@ -106,12 +107,93 @@ export class Agent {
   }
 
   /**
+   * Classify task as simple or complex using LLM
+   */
+  private async classifyTask(userTask: string): Promise<boolean> {
+    this.logger.info('Classifying task complexity');
+
+    const prompt = `请判断以下任务是否是简单问答任务。
+
+判断标准：
+- 简单任务：问候语、简单问答、信息查询、概念解释、不需要工具调用、不需要文件操作
+- 复杂任务：需要编程、需要修改代码、需要执行命令、需要多个步骤、需要工具调用
+
+用户任务：${userTask}
+
+请只回答"简单"或"复杂"，不要其他内容。`;
+
+    const response = await this.llmManager.getClient('reflector').chat({
+      messages: [
+        { role: 'system', content: prompt, timestamp: Date.now() },
+        { role: 'user', content: userTask, timestamp: Date.now() },
+      ],
+      temperature: 0.1,
+      maxTokens: 10,
+    });
+
+    const isSimple = response.content.trim().includes('简单');
+    this.logger.info(`Task classified as: ${isSimple ? 'simple' : 'complex'}`);
+
+    return isSimple;
+  }
+
+  /**
+   * Get direct answer for simple tasks
+   */
+  private async getSimpleAnswer(userTask: string): Promise<void> {
+    this.stateManager.updatePhase('answering');
+
+    this.logger.info('Getting direct answer for simple task');
+
+    const response = await this.llmManager.getClient('executor').chat({
+      messages: [
+        {
+          role: 'system',
+          content: '你是一个友好的助手。请直接、简洁地回答用户的问题。不要提及任何工具或计划。',
+          timestamp: Date.now(),
+        },
+        { role: 'user', content: userTask, timestamp: Date.now() },
+      ],
+      temperature: 0.7,
+      maxTokens: 1000,
+    });
+
+    // Update token statistics
+    this.stateManager.updateMetadata({
+      totalTokens: response.usage.totalTokens,
+    });
+
+    // Emit simple_answer event
+    this.stateManager.getEventEmitter().emit({
+      type: 'simple_answer',
+      timestamp: Date.now(),
+      data: { answer: response.content },
+    });
+
+    // Log the answer
+    this.logger.info('Simple task answer provided');
+
+    // Mark as completed
+    this.stateManager.markCompleted();
+  }
+
+  /**
    * Run the agent with a user task
    */
   async run(userTask: string): Promise<void> {
     this.logger.info('Agent started', { task: userTask });
 
     try {
+      // Classify task before entering planning phase
+      const isSimple = await this.classifyTask(userTask);
+
+      if (isSimple) {
+        // Simple task: get direct answer
+        await this.getSimpleAnswer(userTask);
+        return;
+      }
+
+      // Complex task: continue with normal flow
       // First iteration: Generate the complete plan
       this.stateManager.incrementIteration();
 

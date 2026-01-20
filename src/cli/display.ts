@@ -129,6 +129,7 @@ export class DisplayManager {
       confirming: '❓',
       completed: '✅',
       failed: '❌',
+      answering: '💬',
     };
 
     const phaseNames: Record<AgentPhase, string> = {
@@ -138,6 +139,7 @@ export class DisplayManager {
       confirming: 'Confirming',
       completed: 'Completed',
       failed: 'Failed',
+      answering: 'Answering',
     };
 
     console.log(chalk.bold(`\n${phaseIcons[phase]} ${phaseNames[phase]}\n`));

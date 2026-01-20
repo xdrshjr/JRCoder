@@ -104,7 +104,8 @@ export type AgentPhase =
   | 'reflecting'
   | 'confirming'
   | 'completed'
-  | 'failed';
+  | 'failed'
+  | 'answering';
 
 export interface AgentState {
   phase: AgentPhase;
@@ -289,7 +290,8 @@ export type EventType =
   | 'iteration_started'
   | 'iteration_completed'
   | 'error_occurred'
-  | 'user_confirmation_required';
+  | 'user_confirmation_required'
+  | 'simple_answer';
 
 export interface AgentEvent {
   type: EventType;

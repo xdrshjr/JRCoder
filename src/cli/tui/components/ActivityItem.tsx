@@ -14,6 +14,7 @@ import type {
   ErrorActivity,
   LogActivity,
   PhaseChangeActivity,
+  AnswerActivity,
 } from '../types';
 
 /**
@@ -35,6 +36,8 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ activity }) => {
       return <LogActivityItem activity={activity} />;
     case 'phase_change':
       return <PhaseChangeActivityItem activity={activity} />;
+    case 'answer':
+      return <AnswerActivityItem activity={activity} />;
     default:
       return null;
   }
@@ -44,8 +47,12 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ activity }) => {
  * Thinking activity renderer
  */
 const ThinkingActivityItem: React.FC<{ activity: ThinkingActivity }> = ({ activity }) => {
-  const sourceLabel = activity.source === 'planner' ? 'Planning' :
-                      activity.source === 'reflector' ? 'Reflecting' : 'Thinking';
+  const sourceLabel =
+    activity.source === 'planner'
+      ? 'Planning'
+      : activity.source === 'reflector'
+        ? 'Reflecting'
+        : 'Thinking';
 
   return (
     <Box paddingLeft={1} flexDirection="column">
@@ -101,7 +108,10 @@ const BashActivityItem: React.FC<{ activity: BashActivity }> = ({ activity }) =>
     <Box flexDirection="column" paddingLeft={1}>
       <Box>
         <Text color="yellow">\u2022 [Bash] </Text>
-        <Text backgroundColor="gray" color="white"> $ {activity.command} </Text>
+        <Text backgroundColor="gray" color="white">
+          {' '}
+          $ {activity.command}{' '}
+        </Text>
       </Box>
 
       {activity.status === 'running' && (
@@ -113,11 +123,14 @@ const BashActivityItem: React.FC<{ activity: BashActivity }> = ({ activity }) =>
 
       {activity.output && (
         <Box paddingLeft={2} flexDirection="column">
-          {activity.output.split('\n').slice(0, 10).map((line: string, index: number) => (
-            <Text key={index} dimColor>
-              {line}
-            </Text>
-          ))}
+          {activity.output
+            .split('\n')
+            .slice(0, 10)
+            .map((line: string, index: number) => (
+              <Text key={index} dimColor>
+                {line}
+              </Text>
+            ))}
         </Box>
       )}
 
@@ -212,6 +225,7 @@ const PhaseChangeActivityItem: React.FC<{ activity: PhaseChangeActivity }> = ({ 
     confirming: '\u2753',
     completed: '\u2705',
     failed: '\u274C',
+    answering: '\uD83D\uDDE8',
   };
 
   return (
@@ -219,6 +233,27 @@ const PhaseChangeActivityItem: React.FC<{ activity: PhaseChangeActivity }> = ({ 
       <Text bold>
         {phaseIcon[activity.to]} Phase changed: {activity.from} {'->'} {activity.to}
       </Text>
+    </Box>
+  );
+};
+
+/**
+ * Answer activity renderer for simple task responses
+ */
+const AnswerActivityItem: React.FC<{ activity: AnswerActivity }> = ({ activity }) => {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Box>
+        <Text color="cyan" bold>
+          {'\uD83D\uDCAC '}
+        </Text>
+        <Text color="white" bold>
+          Assistant:
+        </Text>
+      </Box>
+      <Box paddingLeft={2}>
+        <Text>{activity.content}</Text>
+      </Box>
     </Box>
   );
 };
@@ -232,9 +267,12 @@ function formatArgs(args: Record<string, any>): string {
 
   const formatted = entries
     .map(([key, value]) => {
-      const valueStr = typeof value === 'string'
-        ? value.length > 50 ? `${value.substring(0, 50)}...` : value
-        : JSON.stringify(value);
+      const valueStr =
+        typeof value === 'string'
+          ? value.length > 50
+            ? `${value.substring(0, 50)}...`
+            : value
+          : JSON.stringify(value);
       return `${key}=${valueStr}`;
     })
     .join(', ');

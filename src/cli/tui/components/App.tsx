@@ -262,6 +262,17 @@ export const TUIApp: React.FC<TUIAppProps> = ({
       });
     });
 
+    // Listen for agent answer events
+    eventBus.on('agent:answer', (event: any) => {
+      addActivity({
+        id: uuid(),
+        type: 'answer',
+        timestamp: Date.now(),
+        content: event.answer,
+        source: 'assistant',
+      });
+    });
+
     // Listen for error events
     eventBus.on('agent:error', (event: any) => {
       addActivity({
@@ -521,7 +532,8 @@ export const TUIApp: React.FC<TUIAppProps> = ({
     (hasStarted &&
       (state.agentPhase === 'planning' ||
         state.agentPhase === 'executing' ||
-        state.agentPhase === 'reflecting'));
+        state.agentPhase === 'reflecting' ||
+        state.agentPhase === 'answering'));
 
   /**
    * Get command history for input

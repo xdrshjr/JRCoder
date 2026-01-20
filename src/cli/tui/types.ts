@@ -18,7 +18,8 @@ export type ActivityType =
   | 'message'
   | 'error'
   | 'log'
-  | 'phase_change';
+  | 'phase_change'
+  | 'answer';
 
 /**
  * Tool call status
@@ -106,6 +107,15 @@ export interface PhaseChangeActivity extends BaseActivity {
 }
 
 /**
+ * Answer activity for simple task responses
+ */
+export interface AnswerActivity extends BaseActivity {
+  type: 'answer';
+  content: string;
+  source: 'assistant';
+}
+
+/**
  * Union type of all activities
  */
 export type Activity =
@@ -115,7 +125,8 @@ export type Activity =
   | MessageActivity
   | ErrorActivity
   | LogActivity
-  | PhaseChangeActivity;
+  | PhaseChangeActivity
+  | AnswerActivity;
 
 // ============================================================================
 // TUI State
@@ -162,6 +173,7 @@ export type TUIEventType =
   | 'agent:phase'
   | 'agent:thinking'
   | 'agent:error'
+  | 'agent:answer'
   | 'tool:call'
   | 'tool:result'
   | 'bash:start'
@@ -205,6 +217,14 @@ export interface AgentThinkingEvent extends BaseTUIEvent {
 export interface AgentErrorEvent extends BaseTUIEvent {
   type: 'agent:error';
   error: Error;
+}
+
+/**
+ * Agent answer event for simple task responses
+ */
+export interface AgentAnswerEvent extends BaseTUIEvent {
+  type: 'agent:answer';
+  answer: string;
 }
 
 /**
@@ -313,6 +333,7 @@ export type TUIEvent =
   | AgentPhaseEvent
   | AgentThinkingEvent
   | AgentErrorEvent
+  | AgentAnswerEvent
   | ToolCallEvent
   | ToolResultEvent
   | BashStartEvent

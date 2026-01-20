@@ -17,6 +17,7 @@ const PHASE_COLORS: Record<AgentPhase, string> = {
   confirming: 'yellow',
   completed: 'green',
   failed: 'red',
+  answering: 'gray',
 };
 
 /**
@@ -29,6 +30,7 @@ const PHASE_LABELS: Record<AgentPhase, string> = {
   confirming: 'Confirming',
   completed: 'Completed',
   failed: 'Failed',
+  answering: 'Answering',
 };
 
 /**
@@ -39,12 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ version, phase, isOnline }) => {
   const phaseLabel = PHASE_LABELS[phase];
 
   return (
-    <Box
-      borderStyle="round"
-      borderColor="cyan"
-      paddingX={1}
-      justifyContent="space-between"
-    >
+    <Box borderStyle="round" borderColor="cyan" paddingX={1} justifyContent="space-between">
       <Box gap={1}>
         <Text>OpenJRAgent</Text>
         <Text dimColor>v{version}</Text>

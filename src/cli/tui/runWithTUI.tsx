@@ -7,7 +7,7 @@ import { render } from 'ink';
 import { v4 as uuid } from 'uuid';
 import { TUIApp } from './components/App';
 import { TUIEventBus } from './event-bus';
-import { ThinkingAdapter, ToolAdapter, BashAdapter, LogAdapter } from './adapters';
+import { ThinkingAdapter, ToolAdapter, BashAdapter, LogAdapter, AnswerAdapter } from './adapters';
 import { Agent } from '../../core/agent';
 import type { GlobalConfig } from '../../types';
 import type { ILogger } from '../../logger/interfaces';
@@ -67,10 +67,11 @@ export async function runWithTUI(options: RunWithTUIOptions): Promise<void> {
   const toolAdapter = new ToolAdapter(eventBus, logger);
   const bashAdapter = new BashAdapter(eventBus, logger);
   const logAdapter = new LogAdapter(eventBus, logger);
+  const answerAdapter = new AnswerAdapter(eventBus, logger);
 
   logger.debug('TUI adapters created', {
     type: 'tui_adapters_created',
-    adapters: ['thinking', 'tool', 'bash', 'log'],
+    adapters: ['thinking', 'tool', 'bash', 'log', 'answer'],
   });
 
   // 3. Render TUI App
@@ -112,6 +113,7 @@ export async function runWithTUI(options: RunWithTUIOptions): Promise<void> {
       toolAdapter.connect(agentEventEmitter);
       bashAdapter.connect(agentEventEmitter);
       logAdapter.connect(agentEventEmitter);
+      answerAdapter.connect(agentEventEmitter);
 
       // Connect phase change events
       agentEventEmitter.on('phase_changed', (event) => {
@@ -133,9 +135,7 @@ export async function runWithTUI(options: RunWithTUIOptions): Promise<void> {
             stats: {
               totalTokens: state.metadata?.totalTokens || 0,
               totalCost: state.metadata?.totalCost || 0,
-              completedTasks: (state.plan?.tasks.filter(
-                t => t.status === 'completed'
-              ).length || 0),
+              completedTasks: state.plan?.tasks.filter((t) => t.status === 'completed').length || 0,
               totalTasks: state.plan?.tasks.length || 0,
             },
           },
@@ -211,6 +211,7 @@ export async function runWithTUI(options: RunWithTUIOptions): Promise<void> {
       toolAdapter.connect(agentEventEmitter);
       bashAdapter.connect(agentEventEmitter);
       logAdapter.connect(agentEventEmitter);
+      answerAdapter.connect(agentEventEmitter);
 
       // Connect phase change events
       agentEventEmitter.on('phase_changed', (phaseEvent) => {
@@ -232,9 +233,7 @@ export async function runWithTUI(options: RunWithTUIOptions): Promise<void> {
             stats: {
               totalTokens: state.metadata?.totalTokens || 0,
               totalCost: state.metadata?.totalCost || 0,
-              completedTasks: (state.plan?.tasks.filter(
-                t => t.status === 'completed'
-              ).length || 0),
+              completedTasks: state.plan?.tasks.filter((t) => t.status === 'completed').length || 0,
               totalTasks: state.plan?.tasks.length || 0,
             },
           },
@@ -293,6 +292,7 @@ export async function runWithTUI(options: RunWithTUIOptions): Promise<void> {
     toolAdapter.disconnect();
     bashAdapter.disconnect();
     logAdapter.disconnect();
+    answerAdapter.disconnect();
 
     // Unmount TUI
     unmount();

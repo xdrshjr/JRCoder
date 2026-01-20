@@ -109,17 +109,21 @@ export async function runCommand(task: string, options: any): Promise<void> {
 
     display.succeedSpinner('Configuration loaded');
 
-    // 4. Initialize logger
-    const logger = new Logger(config.logging);
+    // 4. Check if TUI mode is enabled (default: false, unless --tui is specified)
+    const useTUI = options.tui === true;
+
+    // 5. Initialize logger (disable console output in TUI mode to avoid conflicts)
+    const loggerConfig = { ...config.logging };
+    if (useTUI) {
+      loggerConfig.enableConsole = false;
+    }
+    const logger = new Logger(loggerConfig);
     logger.info('OpenJRAgent started', {
       type: 'run_command_start',
       task,
       options,
-      tuiMode: options.tui === true,
+      tuiMode: useTUI,
     });
-
-    // 5. Check if TUI mode is enabled (default: false, unless --tui is specified)
-    const useTUI = options.tui === true;
 
     if (useTUI) {
       logger.info('Starting with TUI interface', {
@@ -225,8 +229,9 @@ export async function startCommand(options: any): Promise<void> {
 
     display.succeedSpinner('Configuration loaded');
 
-    // 4. Initialize logger
-    const logger = new Logger(config.logging);
+    // 4. Initialize logger (disable console output in TUI mode to avoid conflicts)
+    const loggerConfig = { ...config.logging, enableConsole: false };
+    const logger = new Logger(loggerConfig);
     logger.info('OpenJRAgent TUI started without initial task', {
       type: 'start_command',
       options,
