@@ -1,0 +1,90 @@
+{
+  "//": "OpenJRAgent Configuration Example - OpenAI Provider",
+  "//": "This is a complete example configuration for using OpenAI's GPT models",
+  "//": "Copy this to .openjragent.json in your project root or use as reference for ~/.openjragent/config.json",
+
+  "agent": {
+    "maxIterations": 10,
+    "enableReflection": true,
+    "requireConfirmation": true,
+    "autoSave": true,
+    "saveInterval": 60000
+  },
+
+  "llm": {
+    "planner": {
+      "provider": "openai",
+      "model": "gpt-4-turbo-preview",
+      "temperature": 0.7,
+      "maxTokens": 4096,
+      "timeout": 60000
+    },
+    "executor": {
+      "provider": "openai",
+      "model": "gpt-4-turbo-preview",
+      "temperature": 0.3,
+      "maxTokens": 4096,
+      "timeout": 120000
+    },
+    "reflector": {
+      "provider": "openai",
+      "model": "gpt-3.5-turbo",
+      "temperature": 0.5,
+      "maxTokens": 2048,
+      "timeout": 60000
+    }
+  },
+
+  "tools": {
+    "enabled": [
+      "code_query",
+      "file_read",
+      "file_write",
+      "file_list",
+      "snippet_save",
+      "snippet_load",
+      "snippet_list",
+      "shell_exec",
+      "ask_user"
+    ],
+    "workspaceDir": ".workspace",
+    "maxFileSize": 10485760,
+    "allowedExtensions": [
+      ".js", ".ts", ".tsx", ".jsx",
+      ".py", ".java", ".go", ".rs",
+      ".json", ".yaml", ".yml",
+      ".md", ".txt"
+    ]
+  },
+
+  "logging": {
+    "level": "info",
+    "outputDir": "logs",
+    "consoleOutput": true,
+    "fileOutput": true,
+    "format": "json",
+    "maxFiles": 7,
+    "maxSize": 10485760
+  },
+
+  "cli": {
+    "theme": "dark",
+    "showProgress": true,
+    "confirmDangerous": true,
+    "defaultTUI": true
+  },
+
+  "retry": {
+    "maxRetries": 3,
+    "initialDelay": 1000,
+    "maxDelay": 10000,
+    "strategy": "exponential"
+  },
+
+  "errorHandling": {
+    "enableAutoRetry": true,
+    "enableStateRollback": true,
+    "enableLLMFallback": true,
+    "maxSnapshotHistory": 10
+  }
+}

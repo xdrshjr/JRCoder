@@ -15,6 +15,10 @@ import {
   viewLogsCommand,
   generateReportCommand,
   listSessionsCommand,
+  initCommand,
+  validateConfigCommand,
+  editConfigCommand,
+  resetConfigCommand,
 } from './commands';
 
 const program = new Command();
@@ -84,6 +88,18 @@ program
 // ============================================================================
 
 program
+  .command('init')
+  .description('Initialize user configuration interactively')
+  .action(async () => {
+    try {
+      await initCommand();
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
   .command('config:show')
   .description('Show current configuration')
   .option('-c, --config <path>', 'Config file path')
@@ -104,6 +120,43 @@ program
   .action(async (options) => {
     try {
       await exportConfigCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('config:validate')
+  .description('Validate configuration and test LLM connection')
+  .option('-c, --config <path>', 'Config file path')
+  .action(async (options) => {
+    try {
+      await validateConfigCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('config:edit')
+  .description('Edit user configuration interactively')
+  .action(async () => {
+    try {
+      await editConfigCommand();
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('config:reset')
+  .description('Reset configuration to defaults')
+  .action(async () => {
+    try {
+      await resetConfigCommand();
     } catch (error) {
       console.error(chalk.red('Error:'), (error as Error).message);
       process.exit(1);

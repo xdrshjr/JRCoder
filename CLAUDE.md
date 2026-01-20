@@ -248,12 +248,64 @@ Key components (in `src/core/`):
 
 ## Configuration
 
+### User Configuration System
+
+OpenJRAgent uses a multi-layered configuration system with user-specific settings stored in `~/.openjragent/`.
+
+**Directory Structure:**
+```
+~/.openjragent/
+├── config.json          # Main user configuration
+├── credentials.json     # Sensitive credentials (auto-separated, 0600 permissions)
+├── presets/            # Custom configuration presets
+└── backups/            # Automatic configuration backups (last 10 kept)
+```
+
+**First-Time Setup:**
+When you first run OpenJRAgent, you'll be prompted to configure it:
+```bash
+openjragent init
+```
+
+This interactive wizard will:
+1. Create the `~/.openjragent/` directory structure
+2. Guide you through selecting an LLM provider
+3. Collect API keys and base URLs
+4. Configure models for Planner, Executor, and Reflector
+5. Set agent parameters
+6. Validate the configuration and test LLM connectivity
+
+**Configuration Management Commands:**
+```bash
+openjragent init              # Run configuration wizard
+openjragent config:show       # Display current configuration
+openjragent config:edit       # Edit configuration interactively
+openjragent config:validate   # Validate and test connection
+openjragent config:export     # Export configuration (sanitized)
+openjragent config:reset      # Reset to defaults with backup
+```
+
+**Configuration Priority:**
 Configuration is loaded from multiple sources (in order of precedence):
 1. Command-line arguments
 2. Custom config file (via `--config`)
-3. `.openjragent.json` in project root
-4. `config/default.json`
-5. Environment variables (`.env` file)
+3. Environment variables (`.env` file)
+4. User config (`~/.openjragent/config.json` - created by `openjragent init`)
+5. Project config (`.openjragent.json` in project root)
+6. Default config (`config/default.json`)
+
+**Automatic Credential Separation:**
+When saving configuration, API keys and base URLs are automatically:
+- Extracted from the main config
+- Saved to `credentials.json` with restricted permissions (0600)
+- Merged back when loading configuration
+- Never included in exported configurations or backups
+
+**Installation Behavior:**
+During `npm install`, a postinstall script automatically:
+- Creates the `~/.openjragent/` directory structure
+- Initializes a default config file (if none exists)
+- Creates a README with configuration instructions
 
 ### Configuration Presets
 

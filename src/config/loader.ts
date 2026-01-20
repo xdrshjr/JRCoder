@@ -11,13 +11,13 @@ import { ConfigError } from '../core/errors';
 import { deepMerge } from '../utils';
 import { defaultConfig } from './default';
 import { ConfigValidator } from './validator';
+import { UserConfigManager } from './user-config';
 
 export class ConfigLoader {
   private static readonly CONFIG_PATHS = [
     'config/default.json',
     'config/local.json',
     '.openjragent.json',
-    path.join(os.homedir(), '.openjragent', 'config.json'),
   ];
 
   /**
@@ -27,7 +27,7 @@ export class ConfigLoader {
     // 1. Start with default config
     let config: GlobalConfig = { ...defaultConfig };
 
-    // 2. Load and merge config files
+    // 2. Load and merge config files (excluding user config)
     for (const configPath of this.CONFIG_PATHS) {
       if (fs.existsSync(configPath)) {
         try {
@@ -39,7 +39,13 @@ export class ConfigLoader {
       }
     }
 
-    // 3. Load custom config file if specified
+    // 3. Load user config with credentials using UserConfigManager
+    const userConfig = UserConfigManager.load();
+    if (userConfig) {
+      config = deepMerge(config, userConfig);
+    }
+
+    // 4. Load custom config file if specified
     if (customPath) {
       if (!fs.existsSync(customPath)) {
         throw new ConfigError(`Custom config file not found: ${customPath}`);
@@ -48,11 +54,11 @@ export class ConfigLoader {
       config = deepMerge(config, customConfig);
     }
 
-    // 4. Load and merge environment variables
+    // 5. Load and merge environment variables
     const envConfig = this.loadEnvConfig();
     config = deepMerge(config, envConfig);
 
-    // 5. Validate final configuration
+    // 6. Validate final configuration
     const validation = ConfigValidator.validate(config);
     if (!validation.valid) {
       throw new ConfigError(

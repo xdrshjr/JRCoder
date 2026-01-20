@@ -20,7 +20,8 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [
     "agent",

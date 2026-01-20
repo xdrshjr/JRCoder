@@ -28,14 +28,78 @@ npm run build
 
 ## Configuration
 
+### Quick Start
+
+First-time users should run the interactive configuration wizard:
+
+```bash
+openjragent init
+```
+
+This will guide you through:
+1. Selecting your LLM provider (OpenAI, Anthropic, or Ollama)
+2. Entering your API keys and base URLs
+3. Choosing models for Planner, Executor, and Reflector
+4. Setting agent parameters (max iterations, reflection, etc.)
+
+Configuration is saved to `~/.openjragent/config.json`
+
+### Configuration Management Commands
+
+```bash
+# Initialize or reconfigure
+openjragent init
+
+# Show current configuration
+openjragent config:show
+
+# Edit configuration interactively
+openjragent config:edit
+
+# Validate configuration and test LLM connection
+openjragent config:validate
+
+# Export configuration to a file
+openjragent config:export -o my-config.json
+
+# Reset to defaults (with backup)
+openjragent config:reset
+```
+
+### User Configuration Directory
+
+OpenJRAgent creates a configuration directory in your home folder:
+
+```
+~/.openjragent/
+├── config.json          # Main configuration file
+├── credentials.json     # Sensitive credentials (auto-generated)
+├── presets/            # Custom configuration presets
+└── backups/            # Configuration backups (last 10 kept)
+```
+
+### Configuration Priority
+
+Configuration is loaded from multiple sources with the following priority (highest to lowest):
+
+1. **Command-line arguments** - `--max-iterations`, `--planner-model`, etc.
+2. **Custom config file** - via `--config <path>` argument
+3. **Environment variables** - `OPENAI_API_KEY`, `AGENT_MAX_ITERATIONS`, etc.
+4. **User config** - `~/.openjragent/config.json` (created by `openjragent init`)
+5. **Project config** - `.openjragent.json` in project root
+6. **Default config** - Built-in defaults
+
 ### Environment Variables
 
-Create a `.env` file in the project root:
+You can also use environment variables (create a `.env` file):
 
 ```bash
 # LLM API Keys
 OPENAI_API_KEY=sk-...
+OPENAI_BASE_URL=https://api.openai.com/v1
+
 ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_BASE_URL=https://api.anthropic.com
 
 # Agent Configuration
 AGENT_MAX_ITERATIONS=10
@@ -50,9 +114,9 @@ LOG_OUTPUT_DIR=logs
 TOOLS_WORKSPACE_DIR=.workspace
 ```
 
-### Configuration File
+### Project Configuration File
 
-You can also use a configuration file (`.openjragent.json`):
+For project-specific settings, create `.openjragent.json` in your project root:
 
 ```json
 {
@@ -78,16 +142,27 @@ You can also use a configuration file (`.openjragent.json`):
 }
 ```
 
+**Note:** Do not commit API keys to version control. Use the user config (`~/.openjragent/config.json`) or environment variables for credentials.
+
+### Security Best Practices
+
+1. **Never commit API keys** - Use user config or environment variables
+2. **Use credentials.json** - API keys are automatically separated into `~/.openjragent/credentials.json` with restricted permissions (0600)
+3. **Keep backups** - Configuration changes are automatically backed up to `~/.openjragent/backups/`
+4. **Validate configuration** - Run `openjragent config:validate` to test your setup
+
+For more details, see [Configuration Guide](docs/Configuration.md).
+
 ## Usage
 
 ### Basic Usage
 
 ```bash
 # Run agent with a task (uses modern TUI by default)
-openjragent run "Implement a python game about snake eating"
+openjragent run "Implement a python game about snake eating, put it on tmp folder"
 
 # Run with TUI interface (explicit)
-openjragent run "Fix bug in checkout" --tui
+openjragent run "Implement a python game about snake eating, put it on tmp folder" --tui
 
 # Run without TUI (legacy CLI mode)
 openjragent run "Add dark mode" --no-tui
