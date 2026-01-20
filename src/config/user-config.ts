@@ -233,8 +233,7 @@ Make sure to keep your API keys private. Do not commit \`config.json\` to versio
       }
 
       if (sanitized.llm.planner.baseURL) {
-        (credentials[provider as keyof Credentials] as any).baseURL =
-          sanitized.llm.planner.baseURL;
+        (credentials[provider as keyof Credentials] as any).baseURL = sanitized.llm.planner.baseURL;
         delete sanitized.llm.planner.baseURL;
       }
     }
@@ -247,8 +246,7 @@ Make sure to keep your API keys private. Do not commit \`config.json\` to versio
       }
 
       if (sanitized.llm.executor.apiKey) {
-        (credentials[provider as keyof Credentials] as any).apiKey =
-          sanitized.llm.executor.apiKey;
+        (credentials[provider as keyof Credentials] as any).apiKey = sanitized.llm.executor.apiKey;
         delete sanitized.llm.executor.apiKey;
       }
 
@@ -267,8 +265,7 @@ Make sure to keep your API keys private. Do not commit \`config.json\` to versio
       }
 
       if (sanitized.llm.reflector.apiKey) {
-        (credentials[provider as keyof Credentials] as any).apiKey =
-          sanitized.llm.reflector.apiKey;
+        (credentials[provider as keyof Credentials] as any).apiKey = sanitized.llm.reflector.apiKey;
         delete sanitized.llm.reflector.apiKey;
       }
 
@@ -361,7 +358,7 @@ Make sure to keep your API keys private. Do not commit \`config.json\` to versio
    */
   private static async backup(): Promise<void> {
     try {
-      if (!await fs.pathExists(this.USER_CONFIG_FILE)) {
+      if (!(await fs.pathExists(this.USER_CONFIG_FILE))) {
         return;
       }
 

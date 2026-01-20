@@ -62,7 +62,11 @@ export async function runCommand(task: string, options: any): Promise<void> {
   try {
     // 0. Check if user config exists (first-time run detection)
     if (!UserConfigManager.exists()) {
-      console.log(chalk.yellow('\n⚠️  No configuration found. This appears to be your first time using OpenJRAgent.\n'));
+      console.log(
+        chalk.yellow(
+          '\n⚠️  No configuration found. This appears to be your first time using OpenJRAgent.\n'
+        )
+      );
 
       const { runInit } = await inquirer.prompt([
         {
@@ -77,7 +81,9 @@ export async function runCommand(task: string, options: any): Promise<void> {
         await initCommand();
         console.log(chalk.cyan('\nNow running your task...\n'));
       } else {
-        console.log(chalk.yellow('\nPlease run "openjragent init" to configure the agent before use.\n'));
+        console.log(
+          chalk.yellow('\nPlease run "openjragent init" to configure the agent before use.\n')
+        );
         process.exit(0);
       }
     }
@@ -109,11 +115,11 @@ export async function runCommand(task: string, options: any): Promise<void> {
       type: 'run_command_start',
       task,
       options,
-      tuiMode: options.tui !== false,
+      tuiMode: options.tui === true,
     });
 
-    // 5. Check if TUI mode is enabled (default: true, unless --no-tui is specified)
-    const useTUI = options.tui !== false;
+    // 5. Check if TUI mode is enabled (default: false, unless --tui is specified)
+    const useTUI = options.tui === true;
 
     if (useTUI) {
       logger.info('Starting with TUI interface', {
@@ -172,7 +178,11 @@ export async function startCommand(options: any): Promise<void> {
   try {
     // 0. Check if user config exists (first-time run detection)
     if (!UserConfigManager.exists()) {
-      console.log(chalk.yellow('\n⚠️  No configuration found. This appears to be your first time using OpenJRAgent.\n'));
+      console.log(
+        chalk.yellow(
+          '\n⚠️  No configuration found. This appears to be your first time using OpenJRAgent.\n'
+        )
+      );
 
       const { runInit } = await inquirer.prompt([
         {
@@ -187,7 +197,9 @@ export async function startCommand(options: any): Promise<void> {
         await initCommand();
         console.log(chalk.cyan('\nNow starting TUI...\n'));
       } else {
-        console.log(chalk.yellow('\nPlease run "openjragent init" to configure the agent before use.\n'));
+        console.log(
+          chalk.yellow('\nPlease run "openjragent init" to configure the agent before use.\n')
+        );
         process.exit(0);
       }
     }
@@ -278,6 +290,16 @@ export async function showConfigCommand(options: any): Promise<void> {
     console.log(chalk.bold('Tools:'));
     console.log(`  Enabled: ${chalk.yellow(config.tools.enabled.length)} tools`);
     console.log(`  Workspace: ${chalk.yellow(config.tools.workspaceDir)}`);
+    console.log();
+
+    console.log(chalk.bold('CLI Settings:'));
+    console.log(
+      `  Confirm Dangerous: ${chalk.yellow(config.cli.confirmDangerous ? 'Enabled' : 'Disabled')}`
+    );
+    console.log(`  Theme: ${chalk.yellow(config.cli.theme)}`);
+    console.log(
+      `  Show Progress: ${chalk.yellow(config.cli.showProgress ? 'Enabled' : 'Disabled')}`
+    );
     console.log();
 
     console.log(chalk.bold('Logging:'));
@@ -446,8 +468,7 @@ export async function initCommand(): Promise<void> {
           name: 'apiKey',
           message: 'Enter your OpenAI API Key:',
           mask: '*',
-          validate: (input) =>
-            input.trim().length > 0 ? true : 'API Key is required',
+          validate: (input) => (input.trim().length > 0 ? true : 'API Key is required'),
         },
         {
           type: 'input',
@@ -465,8 +486,7 @@ export async function initCommand(): Promise<void> {
           name: 'apiKey',
           message: 'Enter your Anthropic API Key:',
           mask: '*',
-          validate: (input) =>
-            input.trim().length > 0 ? true : 'API Key is required',
+          validate: (input) => (input.trim().length > 0 ? true : 'API Key is required'),
         },
         {
           type: 'input',
@@ -582,7 +602,9 @@ export async function initCommand(): Promise<void> {
       console.log(chalk.yellow(`\nWarning: ${connectionTest.error}`));
       console.log(chalk.yellow('Your configuration was saved, but the connection test failed.'));
       console.log(chalk.yellow('Please verify your API key and base URL are correct.'));
-      console.log(chalk.cyan('\nYou can test your configuration with: openjragent config:validate\n'));
+      console.log(
+        chalk.cyan('\nYou can test your configuration with: openjragent config:validate\n')
+      );
     }
   } catch (error) {
     console.error(chalk.red('\nError during initialization:'), (error as Error).message);
@@ -596,11 +618,7 @@ export async function initCommand(): Promise<void> {
 function getModelChoices(provider: string): string[] {
   const models: Record<string, string[]> = {
     openai: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'],
-    anthropic: [
-      'claude-3-opus-20240229',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307',
-    ],
+    anthropic: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
     ollama: ['llama2', 'codellama', 'mistral', 'deepseek-coder'],
   };
 
@@ -616,10 +634,7 @@ async function validateLLMConnection(config: DeepPartial<GlobalConfig>): Promise
 }> {
   try {
     // Try to load the full configuration
-    const fullConfig = ConfigLoader.merge(
-      ConfigLoader.load(),
-      config
-    ) as GlobalConfig;
+    const fullConfig = ConfigLoader.merge(ConfigLoader.load(), config) as GlobalConfig;
 
     // Create a logger for validation
     const logger = new Logger(fullConfig.logging);
@@ -759,7 +774,9 @@ export async function editConfigCommand(): Promise<void> {
 /**
  * Edit credentials (API Keys and URLs)
  */
-async function editCredentials(config: DeepPartial<GlobalConfig>): Promise<DeepPartial<GlobalConfig>> {
+async function editCredentials(
+  config: DeepPartial<GlobalConfig>
+): Promise<DeepPartial<GlobalConfig>> {
   const { provider } = await inquirer.prompt([
     {
       type: 'list',
@@ -1043,9 +1060,7 @@ export async function resetConfigCommand(): Promise<void> {
     await UserConfigManager.initialize();
 
     console.log(chalk.green('\n✅ Configuration has been reset to defaults!'));
-    console.log(
-      chalk.cyan(`Backup saved to: ${UserConfigManager.getBackupsDir()}\n`)
-    );
+    console.log(chalk.cyan(`Backup saved to: ${UserConfigManager.getBackupsDir()}\n`));
     console.log(chalk.yellow('Note: You need to run "openjragent init" to configure API keys.\n'));
   } catch (error) {
     console.error(chalk.red('\nError resetting configuration:'), (error as Error).message);

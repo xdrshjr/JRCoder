@@ -111,6 +111,8 @@ export class ToolManager {
 
     // Check for dangerous operations
     if (tool.dangerous && this.confirmDangerous) {
+      // Debug: log the confirmDangerous value
+      console.log(`[DEBUG] confirmDangerous value: ${this.confirmDangerous}`);
       const confirmed = await this.askConfirmation(toolCall);
       if (!confirmed) {
         return {

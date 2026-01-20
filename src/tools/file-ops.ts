@@ -18,7 +18,8 @@ export class FileReadTool extends BaseTool {
     {
       name: 'path',
       type: 'string',
-      description: '文件路径（可以是相对路径或绝对路径。相对路径相对于工作目录，绝对路径可以指向任何位置）',
+      description:
+        '文件路径（可以是相对路径或绝对路径。相对路径相对于工作目录，绝对路径可以指向任何位置）',
       required: true,
     },
     {
@@ -80,7 +81,8 @@ export class FileWriteTool extends BaseTool {
     {
       name: 'path',
       type: 'string',
-      description: '文件路径（可以是相对路径或绝对路径。相对路径相对于工作目录，绝对路径可以指向任何位置）',
+      description:
+        '文件路径（可以是相对路径或绝对路径。相对路径相对于工作目录，绝对路径可以指向任何位置）',
       required: true,
     },
     {

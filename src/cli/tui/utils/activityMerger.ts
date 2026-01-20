@@ -177,9 +177,7 @@ export function mergeActivities(
     }
   }
 
-  return finalConfig.enableTrimming
-    ? trimActivities(merged, finalConfig.maxActivities)
-    : merged;
+  return finalConfig.enableTrimming ? trimActivities(merged, finalConfig.maxActivities) : merged;
 }
 
 /**

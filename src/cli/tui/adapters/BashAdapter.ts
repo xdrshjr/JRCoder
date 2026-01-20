@@ -92,9 +92,7 @@ export class BashAdapter {
    */
   private handleBashComplete(toolCall: ToolCall, result: ToolResult): void {
     const command = toolCall.arguments.command as string;
-    const exitCode = result.success
-      ? result.data?.exitCode ?? 0
-      : result.data?.exitCode ?? 1;
+    const exitCode = result.success ? (result.data?.exitCode ?? 0) : (result.data?.exitCode ?? 1);
 
     this.logger.info('Bash command completed', {
       type: 'bash_command_completed',

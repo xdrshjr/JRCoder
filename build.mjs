@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { chmod } from 'fs/promises';
+import { chmod, copyFile } from 'fs/promises';
 import { createRequire } from 'module';
 import { builtinModules } from 'module';
 
@@ -15,7 +15,7 @@ await esbuild.build({
   outfile: 'dist/cli.js',
   external: [
     ...builtinModules,
-    ...builtinModules.map(m => `node:${m}`),
+    ...builtinModules.map((m) => `node:${m}`),
     'chalk',
     'commander',
     'fs-extra',
@@ -38,5 +38,9 @@ await esbuild.build({
 
 // Make the output file executable
 await chmod('dist/cli.js', 0o755);
+
+// Create copy for npm bin entry point (dist/openjragent.js)
+await copyFile('dist/cli.js', 'dist/openjragent.js');
+await chmod('dist/openjragent.js', 0o755);
 
 console.log('Build complete');

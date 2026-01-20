@@ -40,10 +40,7 @@ export class ToolAdapter {
 
     // Listen for tool completion events
     agentEventEmitter.on('tool_completed', (event: AgentEvent) => {
-      this.handleToolCompleted(
-        event.data.toolCall as ToolCall,
-        event.data.result as ToolResult
-      );
+      this.handleToolCompleted(event.data.toolCall as ToolCall, event.data.result as ToolResult);
     });
 
     this.logger.info('ToolAdapter connected successfully', {
@@ -141,11 +138,7 @@ export class ToolAdapter {
   /**
    * Emit a tool call manually
    */
-  emitToolCall(
-    id: string,
-    toolName: string,
-    args: Record<string, any>
-  ): void {
+  emitToolCall(id: string, toolName: string, args: Record<string, any>): void {
     this.logger.debug('Manually emitting tool call', {
       type: 'manual_tool_call_emitted',
       toolName,
@@ -166,12 +159,7 @@ export class ToolAdapter {
   /**
    * Emit a tool result manually
    */
-  emitToolResult(
-    id: string,
-    success: boolean,
-    result?: string,
-    error?: string
-  ): void {
+  emitToolResult(id: string, success: boolean, result?: string, error?: string): void {
     this.logger.debug('Manually emitting tool result', {
       type: 'manual_tool_result_emitted',
       toolCallId: id,

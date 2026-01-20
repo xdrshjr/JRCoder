@@ -37,6 +37,7 @@ openjragent init
 ```
 
 This will guide you through:
+
 1. Selecting your LLM provider (OpenAI, Anthropic, or Ollama)
 2. Entering your API keys and base URLs
 3. Choosing models for Planner, Executor, and Reflector
@@ -158,7 +159,7 @@ For more details, see [Configuration Guide](docs/Configuration.md).
 ### Basic Usage
 
 ```bash
-# Run agent with a task (uses modern TUI by default)
+# Run agent with a task (uses legacy CLI mode by default)
 openjragent run "Implement a python game about snake eating, put it on tmp folder"
 
 # Run with TUI interface (explicit)
@@ -206,6 +207,7 @@ openjragent sessions
 ### TUI Keyboard Shortcuts
 
 When running with the TUI interface:
+
 - **Enter**: Submit your message
 - **Ctrl+C**: Exit the application
 - **Ctrl+S**: Manually save current session
@@ -277,6 +279,7 @@ OpenJRAgent follows a multi-agent architecture with a modern TUI interface:
 3. **Reflector**: Evaluates results and suggests improvements
 
 The agent operates in a loop:
+
 ```
 Planning → User Confirmation → Execution → Reflection → (repeat if needed)
 ```
@@ -286,6 +289,7 @@ Planning → User Confirmation → Execution → Reflection → (repeat if neede
 The TUI provides a real-time, interactive interface built with ink (React for CLI):
 
 **Interface Layout:**
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Header: Project Info | Phase | Status                   │
@@ -305,6 +309,7 @@ The TUI provides a real-time, interactive interface built with ink (React for CL
 ```
 
 **Key Features:**
+
 - Real-time activity streaming
 - Automatic session saving every 60 seconds
 - Command history navigation
@@ -315,6 +320,7 @@ The TUI provides a real-time, interactive interface built with ink (React for CL
 ## Tools
 
 Available tools:
+
 - `code_query`: Search for functions, classes, and files in codebase
 - `file_read`: Read file contents
 - `file_write`: Write or create files

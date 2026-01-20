@@ -173,9 +173,7 @@ export class SessionHistoryManager {
       await fs.ensureDir(historyDir);
 
       const historyFile = path.join(historyDir, 'history.json');
-      const sessionHistory = this.history.filter(
-        (entry) => entry.sessionId === sessionId
-      );
+      const sessionHistory = this.history.filter((entry) => entry.sessionId === sessionId);
 
       await fs.writeJSON(historyFile, sessionHistory, { spaces: 2 });
 
@@ -186,14 +184,10 @@ export class SessionHistoryManager {
         filePath: historyFile,
       });
     } catch (error) {
-      this.logger.error(
-        'Failed to save history',
-        error as Error,
-        {
-          type: 'history_save_error',
-          sessionId,
-        }
-      );
+      this.logger.error('Failed to save history', error as Error, {
+        type: 'history_save_error',
+        sessionId,
+      });
       throw error;
     }
   }
@@ -203,12 +197,7 @@ export class SessionHistoryManager {
    */
   async load(sessionId: string): Promise<void> {
     try {
-      const historyFile = path.join(
-        this.workspaceDir,
-        'sessions',
-        sessionId,
-        'history.json'
-      );
+      const historyFile = path.join(this.workspaceDir, 'sessions', sessionId, 'history.json');
 
       // Check if history file exists
       if (!(await fs.pathExists(historyFile))) {
@@ -225,9 +214,7 @@ export class SessionHistoryManager {
       // Validate and load history
       if (Array.isArray(sessionHistory)) {
         // Remove old entries from this session
-        this.history = this.history.filter(
-          (entry) => entry.sessionId !== sessionId
-        );
+        this.history = this.history.filter((entry) => entry.sessionId !== sessionId);
 
         // Add loaded entries
         this.history.push(...sessionHistory);
@@ -245,14 +232,10 @@ export class SessionHistoryManager {
         });
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to load history',
-        error as Error,
-        {
-          type: 'history_load_error',
-          sessionId,
-        }
-      );
+      this.logger.error('Failed to load history', error as Error, {
+        type: 'history_load_error',
+        sessionId,
+      });
       // Don't throw - just continue with empty history
       this.history = [];
     }
@@ -285,15 +268,11 @@ export class SessionHistoryManager {
         entryCount: this.history.length,
       });
     } catch (error) {
-      this.logger.error(
-        'Failed to export history',
-        error as Error,
-        {
-          type: 'history_export_error',
-          filePath,
-          format,
-        }
-      );
+      this.logger.error('Failed to export history', error as Error, {
+        type: 'history_export_error',
+        filePath,
+        format,
+      });
       throw error;
     }
   }
@@ -303,9 +282,7 @@ export class SessionHistoryManager {
    */
   search(keyword: string): HistoryEntry[] {
     const lowerKeyword = keyword.toLowerCase();
-    return this.history.filter((entry) =>
-      entry.message.toLowerCase().includes(lowerKeyword)
-    );
+    return this.history.filter((entry) => entry.message.toLowerCase().includes(lowerKeyword));
   }
 
   /**

@@ -2,7 +2,7 @@
   "agent": {
     "maxIterations": 10,
     "enableReflection": true,
-    "requireConfirmation": true,
+    "requireConfirmation": false,
     "autoSave": true,
     "saveInterval": 60000,
     "maxRetries": 3

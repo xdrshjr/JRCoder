@@ -39,10 +39,12 @@ npm test:coverage
 ```
 
 Test files are located in:
+
 - `src/__tests__/` - Unit tests alongside source code
 - `tests/` - Integration and end-to-end tests
 
 Jest configuration:
+
 - Test files: `**/__tests__/**/*.ts`, `**/*.test.ts`, `**/*.spec.ts`
 - Coverage threshold: 80% for branches, functions, lines, and statements
 - Test timeout: 10 seconds
@@ -72,7 +74,7 @@ The CLI binary is `openjragent` (defined in package.json bin field).
 # Start TUI directly without task (recommended)
 openjragent start
 
-# Run agent with a task (uses modern TUI by default)
+# Run agent with a task (uses legacy CLI mode by default)
 openjragent run "task description"
 
 # Run with TUI interface (explicit)
@@ -119,6 +121,7 @@ openjragent sessions
 ### TUI Keyboard Shortcuts
 
 When running with TUI mode:
+
 - **Enter**: Submit user input
 - **Ctrl+C**: Exit the application
 - **Ctrl+S**: Manually save current session
@@ -173,6 +176,7 @@ The system operates in a loop with four phases:
 The TUI provides a modern, interactive interface similar to Claude Code and Gemini CLI. Built with ink (React for CLI) for a component-based architecture.
 
 **Key Features:**
+
 - **Real-time Status Display**: Header showing current phase, project info, and online status
 - **Activity Stream**: Hierarchical display of agent thinking, tool calls, bash execution, and results
 - **Interactive Input**: Advanced input box with command history, multiline support, and keyboard shortcuts
@@ -181,6 +185,7 @@ The TUI provides a modern, interactive interface similar to Claude Code and Gemi
 - **Debug Mode**: Optional debug overlay for development and troubleshooting
 
 **TUI Components** (`src/cli/tui/components/`):
+
 - `App.tsx`: Main application component with state management
 - `Header.tsx`: Top bar with project name, version, phase indicator, and status
 - `ContentArea.tsx`: Scrollable activity display area
@@ -191,6 +196,7 @@ The TUI provides a modern, interactive interface similar to Claude Code and Gemi
 - `LoadingIndicator.tsx`, `EmptyState.tsx`: UI state components
 
 **TUI Architecture** (`src/cli/tui/`):
+
 - `event-bus.ts`: Central event system for TUI updates
 - `adapters/`: Connect Agent events to TUI
   - `ThinkingAdapter.ts`: Captures Planner/Reflector thinking process
@@ -208,11 +214,13 @@ The TUI provides a modern, interactive interface similar to Claude Code and Gemi
 ### Tool System
 
 All tools inherit from `BaseTool` (`src/tools/base.ts`) and implement:
+
 - `execute(args)`: Main execution logic
 - `validate(args)`: Parameter validation
 - `getDefinition()`: Returns tool definition for LLM function calling
 
 Available tools (in `src/tools/`):
+
 - `code-query.ts`: Search for functions, classes, and files in codebase
 - `file-ops.ts`: Read, write, and list files
 - `snippet.ts`: Save, load, and list reusable code snippets
@@ -234,12 +242,14 @@ Each agent role (Planner/Executor/Reflector) can use a different model for cost 
 ### Error Handling System
 
 Comprehensive error handling with four error categories:
+
 - **RECOVERABLE**: Can be handled and execution continues
 - **TRANSIENT**: Temporary errors that can be retried (timeouts, rate limits)
 - **PERMANENT**: Cannot be retried (invalid config, tool not found)
 - **CRITICAL**: Requires immediate termination (security errors)
 
 Key components (in `src/core/`):
+
 - `error-handler.ts`: Central error handling logic
 - `retry-manager.ts`: Retry strategies (exponential, linear, fixed, adaptive)
 - `fallback-manager.ts`: LLM and tool fallback mechanisms
@@ -253,6 +263,7 @@ Key components (in `src/core/`):
 OpenJRAgent uses a multi-layered configuration system with user-specific settings stored in `~/.openjragent/`.
 
 **Directory Structure:**
+
 ```
 ~/.openjragent/
 ├── config.json          # Main user configuration
@@ -263,11 +274,13 @@ OpenJRAgent uses a multi-layered configuration system with user-specific setting
 
 **First-Time Setup:**
 When you first run OpenJRAgent, you'll be prompted to configure it:
+
 ```bash
 openjragent init
 ```
 
 This interactive wizard will:
+
 1. Create the `~/.openjragent/` directory structure
 2. Guide you through selecting an LLM provider
 3. Collect API keys and base URLs
@@ -276,6 +289,7 @@ This interactive wizard will:
 6. Validate the configuration and test LLM connectivity
 
 **Configuration Management Commands:**
+
 ```bash
 openjragent init              # Run configuration wizard
 openjragent config:show       # Display current configuration
@@ -287,6 +301,7 @@ openjragent config:reset      # Reset to defaults with backup
 
 **Configuration Priority:**
 Configuration is loaded from multiple sources (in order of precedence):
+
 1. Command-line arguments
 2. Custom config file (via `--config`)
 3. Environment variables (`.env` file)
@@ -296,6 +311,7 @@ Configuration is loaded from multiple sources (in order of precedence):
 
 **Automatic Credential Separation:**
 When saving configuration, API keys and base URLs are automatically:
+
 - Extracted from the main config
 - Saved to `credentials.json` with restricted permissions (0600)
 - Merged back when loading configuration
@@ -303,6 +319,7 @@ When saving configuration, API keys and base URLs are automatically:
 
 **Installation Behavior:**
 During `npm install`, a postinstall script automatically:
+
 - Creates the `~/.openjragent/` directory structure
 - Initializes a default config file (if none exists)
 - Creates a README with configuration instructions
@@ -327,6 +344,7 @@ During `npm install`, a postinstall script automatically:
 ## State Management
 
 The agent maintains state throughout execution:
+
 - Current phase (planning/confirming/executing/reflecting/completed)
 - Current iteration count
 - Execution plan with task statuses
@@ -334,6 +352,7 @@ The agent maintains state throughout execution:
 - Tool call history
 
 State can be:
+
 - Saved to disk (auto-save every 60s by default)
 - Restored from saved sessions (via `--resume`)
 - Rolled back to snapshots on errors (if `enableStateRollback: true`)
@@ -380,6 +399,7 @@ State can be:
 ### Conversation Context
 
 The Executor maintains full conversation history including:
+
 - System prompts
 - User messages
 - Assistant responses
@@ -390,6 +410,7 @@ This context is passed to the LLM on each turn to maintain coherence.
 ### Iteration Limits
 
 The agent has a maximum iteration count (`maxIterations`, default 10) to prevent infinite loops. Each iteration includes:
+
 1. Planning (or replanning)
 2. User confirmation (if enabled)
 3. Execution

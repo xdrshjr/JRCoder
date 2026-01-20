@@ -285,11 +285,7 @@ export class LogAdapter {
   /**
    * Manually emit a log activity to TUI
    */
-  emitLogActivity(
-    level: 'debug' | 'info' | 'warn' | 'error',
-    message: string,
-    data?: any
-  ): void {
+  emitLogActivity(level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: any): void {
     this.logger.debug('Manually emitting log activity', {
       type: 'manual_log_activity_emitted',
       level,

@@ -87,10 +87,7 @@ export class ThinkingAdapter {
   /**
    * Emit a thinking activity to the TUI
    */
-  emitThinking(
-    content: string,
-    source: 'planner' | 'reflector' | 'executor'
-  ): void {
+  emitThinking(content: string, source: 'planner' | 'reflector' | 'executor'): void {
     this.logger.debug('Emitting thinking activity', {
       type: 'thinking_activity_emitted',
       source,

@@ -4,8 +4,8 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import os from 'os';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
 import type { GlobalConfig, DeepPartial, LogLevel } from '../types';
 import { ConfigError } from '../core/errors';
 import { deepMerge } from '../utils';
@@ -14,16 +14,60 @@ import { ConfigValidator } from './validator';
 import { UserConfigManager } from './user-config';
 
 export class ConfigLoader {
-  private static readonly CONFIG_PATHS = [
-    'config/default.json',
-    'config/local.json',
-    '.openjragent.json',
-  ];
+  private static CONFIG_PATHS: string[] = [];
+
+  /**
+   * Initialize CONFIG_PATHS with absolute paths
+   */
+  private static initializeConfigPaths() {
+    if (this.CONFIG_PATHS.length > 0) return;
+
+    let moduleDir: string;
+
+    // Try to get module directory using import.meta.url (ESM) or __filename (CJS)
+    try {
+      const filePath = fileURLToPath(import.meta.url);
+      moduleDir = path.dirname(filePath);
+    } catch {
+      // Fallback to __filename if available
+      if (typeof __filename !== 'undefined') {
+        moduleDir = path.dirname(__filename);
+      } else {
+        // Final fallback: use process.cwd() and try to find config directory
+        moduleDir = path.join(process.cwd(), 'src', 'config');
+      }
+    }
+
+    // Calculate the project root directory
+    // When bundled, moduleDir might be directory containing the bundled CLI
+    // We need to find the OpenJRAgent installation directory by searching for config/default.json
+    let projectRoot = moduleDir;
+
+    // If moduleDir ends with 'dist', go up one level (the project root)
+    if (path.basename(moduleDir) === 'dist') {
+      projectRoot = path.dirname(moduleDir);
+    } else if (path.basename(moduleDir) === 'cli') {
+      // If CLI is in a 'cli' subdirectory, go up two levels
+      projectRoot = path.dirname(path.dirname(moduleDir));
+    }
+
+    // Default config file in the project installation directory
+    const defaultConfigPath = path.join(projectRoot, 'config', 'default.json');
+
+    // Local and project config files (relative to current working directory)
+    const localConfigPath = 'config/local.json';
+    const projectConfigPath = '.openjragent.json';
+
+    this.CONFIG_PATHS = [defaultConfigPath, localConfigPath, projectConfigPath];
+  }
 
   /**
    * Load configuration with priority: CLI args > env vars > config files > defaults
    */
   static load(customPath?: string): GlobalConfig {
+    // Initialize config paths
+    this.initializeConfigPaths();
+
     // 1. Start with default config
     let config: GlobalConfig = { ...defaultConfig };
 

@@ -134,14 +134,10 @@ export class AutoSaveManager {
     this.saveInterval = setInterval(() => {
       if (this.isDirty) {
         this.save().catch((error) => {
-          this.logger.error(
-            'Auto-save failed',
-            error as Error,
-            {
-              type: 'auto_save_error',
-              sessionId: this.sessionId,
-            }
-          );
+          this.logger.error('Auto-save failed', error as Error, {
+            type: 'auto_save_error',
+            sessionId: this.sessionId,
+          });
         });
       }
     }, this.intervalMs);
@@ -170,14 +166,10 @@ export class AutoSaveManager {
     // Save one last time if dirty
     if (this.isDirty) {
       this.save().catch((error) => {
-        this.logger.error(
-          'Final save failed',
-          error as Error,
-          {
-            type: 'final_save_error',
-            sessionId: this.sessionId,
-          }
-        );
+        this.logger.error('Final save failed', error as Error, {
+          type: 'final_save_error',
+          sessionId: this.sessionId,
+        });
       });
     }
   }
@@ -232,14 +224,10 @@ export class AutoSaveManager {
         activityCount: state.activities.length,
       });
     } catch (error) {
-      this.logger.error(
-        'Failed to save state',
-        error as Error,
-        {
-          type: 'state_save_error',
-          sessionId: this.sessionId,
-        }
-      );
+      this.logger.error('Failed to save state', error as Error, {
+        type: 'state_save_error',
+        sessionId: this.sessionId,
+      });
       throw error;
     }
   }
@@ -249,12 +237,7 @@ export class AutoSaveManager {
    */
   async restore(): Promise<TUIState | null> {
     try {
-      const stateFile = path.join(
-        this.workspaceDir,
-        'sessions',
-        this.sessionId,
-        'tui-state.json'
-      );
+      const stateFile = path.join(this.workspaceDir, 'sessions', this.sessionId, 'tui-state.json');
 
       // Check if state file exists
       if (!(await fs.pathExists(stateFile))) {
@@ -287,14 +270,10 @@ export class AutoSaveManager {
 
       return savedState.state;
     } catch (error) {
-      this.logger.error(
-        'Failed to restore state',
-        error as Error,
-        {
-          type: 'state_restore_error',
-          sessionId: this.sessionId,
-        }
-      );
+      this.logger.error('Failed to restore state', error as Error, {
+        type: 'state_restore_error',
+        sessionId: this.sessionId,
+      });
       return null;
     }
   }
@@ -304,12 +283,7 @@ export class AutoSaveManager {
    */
   async delete(): Promise<void> {
     try {
-      const stateFile = path.join(
-        this.workspaceDir,
-        'sessions',
-        this.sessionId,
-        'tui-state.json'
-      );
+      const stateFile = path.join(this.workspaceDir, 'sessions', this.sessionId, 'tui-state.json');
 
       if (await fs.pathExists(stateFile)) {
         await fs.remove(stateFile);
@@ -321,14 +295,10 @@ export class AutoSaveManager {
         });
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to delete saved state',
-        error as Error,
-        {
-          type: 'state_delete_error',
-          sessionId: this.sessionId,
-        }
-      );
+      this.logger.error('Failed to delete saved state', error as Error, {
+        type: 'state_delete_error',
+        sessionId: this.sessionId,
+      });
       throw error;
     }
   }
@@ -338,12 +308,7 @@ export class AutoSaveManager {
    */
   async exists(): Promise<boolean> {
     try {
-      const stateFile = path.join(
-        this.workspaceDir,
-        'sessions',
-        this.sessionId,
-        'tui-state.json'
-      );
+      const stateFile = path.join(this.workspaceDir, 'sessions', this.sessionId, 'tui-state.json');
 
       return await fs.pathExists(stateFile);
     } catch {
@@ -356,12 +321,7 @@ export class AutoSaveManager {
    */
   async getMetadata(): Promise<SavedStateMetadata | null> {
     try {
-      const stateFile = path.join(
-        this.workspaceDir,
-        'sessions',
-        this.sessionId,
-        'tui-state.json'
-      );
+      const stateFile = path.join(this.workspaceDir, 'sessions', this.sessionId, 'tui-state.json');
 
       if (!(await fs.pathExists(stateFile))) {
         return null;
@@ -370,14 +330,10 @@ export class AutoSaveManager {
       const savedState: SavedState = await fs.readJSON(stateFile);
       return savedState.metadata;
     } catch (error) {
-      this.logger.error(
-        'Failed to get state metadata',
-        error as Error,
-        {
-          type: 'state_metadata_error',
-          sessionId: this.sessionId,
-        }
-      );
+      this.logger.error('Failed to get state metadata', error as Error, {
+        type: 'state_metadata_error',
+        sessionId: this.sessionId,
+      });
       return null;
     }
   }
@@ -387,12 +343,7 @@ export class AutoSaveManager {
    */
   async backup(): Promise<string> {
     try {
-      const stateFile = path.join(
-        this.workspaceDir,
-        'sessions',
-        this.sessionId,
-        'tui-state.json'
-      );
+      const stateFile = path.join(this.workspaceDir, 'sessions', this.sessionId, 'tui-state.json');
 
       if (!(await fs.pathExists(stateFile))) {
         throw new Error('No state file to backup');
@@ -415,14 +366,10 @@ export class AutoSaveManager {
 
       return backupFile;
     } catch (error) {
-      this.logger.error(
-        'Failed to backup state',
-        error as Error,
-        {
-          type: 'state_backup_error',
-          sessionId: this.sessionId,
-        }
-      );
+      this.logger.error('Failed to backup state', error as Error, {
+        type: 'state_backup_error',
+        sessionId: this.sessionId,
+      });
       throw error;
     }
   }
@@ -466,14 +413,10 @@ export class AutoSaveManager {
         });
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to cleanup backups',
-        error as Error,
-        {
-          type: 'backup_cleanup_error',
-          sessionId: this.sessionId,
-        }
-      );
+      this.logger.error('Failed to cleanup backups', error as Error, {
+        type: 'backup_cleanup_error',
+        sessionId: this.sessionId,
+      });
     }
   }
 }
