@@ -2,8 +2,8 @@
  * File-based snippet storage implementation
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import fs from 'fs-extra';
+import path from 'path';
 import type { CodeSnippet } from '../types';
 import type { ISnippetStorage } from './interfaces';
 import { StorageError } from '../core/errors';

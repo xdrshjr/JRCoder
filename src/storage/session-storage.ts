@@ -2,8 +2,8 @@
  * File-based session storage implementation
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import fs from 'fs-extra';
+import path from 'path';
 import type { SessionData } from '../types';
 import type { ISessionStorage } from './interfaces';
 import { StorageError } from '../core/errors';

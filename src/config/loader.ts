@@ -2,9 +2,9 @@
  * Configuration loader with multi-level priority
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import * as os from 'os';
+import fs from 'fs-extra';
+import path from 'path';
+import os from 'os';
 import dotenv from 'dotenv';
 import type { GlobalConfig, DeepPartial, LogLevel } from '../types';
 import { ConfigError } from '../core/errors';

@@ -3,7 +3,7 @@
  */
 
 import OpenAI from 'openai';
-import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat';
+import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { BaseLLMClient } from './client';
 import type {
   ILogger,

@@ -2,8 +2,8 @@
  * Report generator for execution reports
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import fs from 'fs-extra';
+import path from 'path';
 import { AgentState } from '../types';
 
 /**

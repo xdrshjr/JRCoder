@@ -4,11 +4,13 @@ OpenJRAgent is an automated programming agent built with TypeScript that uses in
 
 ## Features
 
+- **Modern TUI Interface**: Beautiful text-based UI with real-time status updates, similar to Claude Code and Gemini CLI
 - **Intelligent Task Planning**: Automatically judges task complexity and generates execution plans
 - **Tool-based Execution**: Standardized tool interface supporting code queries, file operations, shell execution, and more
 - **Reflection & Optimization**: Automatic evaluation after execution with iterative improvements
 - **Multi-Model Support**: Planner/Executor/Reflector can use different LLMs for cost optimization
-- **User Interaction**: Pauses at critical points for user confirmation to ensure controllability
+- **Session Management**: Automatic session saving and restoration with command history
+- **User Interaction**: Interactive interface with keyboard shortcuts and command history
 
 ## Installation
 
@@ -78,18 +80,34 @@ You can also use a configuration file (`.openjragent.json`):
 
 ## Usage
 
+### Basic Usage
+
 ```bash
-# Run agent with a task
-openjragent run "Implement a python game about snake eating. set on the M:\tmp\TMP-PROJECT\TEST-01"
+# Run agent with a task (uses modern TUI by default)
+openjragent run "Implement a python game about snake eating"
+
+# Run with TUI interface (explicit)
+openjragent run "Fix bug in checkout" --tui
+
+# Run without TUI (legacy CLI mode)
+openjragent run "Add dark mode" --no-tui
 
 # Use a specific configuration file
-openjragent run "Fix bug in checkout" --config ./my-config.json
+openjragent run "Optimize database queries" --config ./my-config.json
 
+# Resume from a previous session
+openjragent run "Continue previous task" --resume <sessionId>
+```
+
+### Advanced Usage
+
+```bash
 # Override specific parameters
-openjragent run "Add dark mode" \
+openjragent run "Refactor authentication" \
   --max-iterations 20 \
   --planner-model gpt-4 \
-  --log-level debug
+  --log-level debug \
+  --no-reflection
 
 # Use a preset configuration
 openjragent run "Optimize performance" --preset quality
@@ -99,7 +117,29 @@ openjragent config:show
 
 # Export configuration
 openjragent config:export -o my-config.json
+
+# View logs
+openjragent logs --tail 100 --follow
+
+# Generate execution report
+openjragent report --session <id> --format markdown
+
+# List all sessions
+openjragent sessions
 ```
+
+### TUI Keyboard Shortcuts
+
+When running with the TUI interface:
+- **Enter**: Submit your message
+- **Ctrl+C**: Exit the application
+- **Ctrl+S**: Manually save current session
+- **Ctrl+L**: Clear screen activities
+- **Ctrl+P**: Pause/Resume agent execution
+- **Ctrl+D**: Toggle debug mode
+- **Ctrl+E**: Export logs to file
+- **F1**: Show/Hide help overlay
+- **↑/↓**: Navigate command history
 
 ## Development
 
@@ -135,16 +175,27 @@ OpenJRAgent/
 │   ├── config/        # Configuration system
 │   ├── storage/       # Storage system
 │   ├── cli/           # CLI interface
+│   │   └── tui/       # Modern TUI system (ink + React)
+│   │       ├── components/   # React components
+│   │       ├── adapters/     # Event adapters
+│   │       ├── managers/     # Session management
+│   │       ├── hooks/        # Custom hooks
+│   │       └── utils/        # Utilities
 │   └── index.ts       # Entry point
 ├── config/            # Configuration files
 ├── docs/              # Documentation
+│   ├── base/          # Architecture documentation
+│   └── dev-plan/      # Development plans
 ├── tests/             # Test files
-└── logs/              # Log output
+├── logs/              # Log output
+└── .workspace/        # Working directory
 ```
 
 ## Architecture
 
-OpenJRAgent follows a multi-agent architecture:
+OpenJRAgent follows a multi-agent architecture with a modern TUI interface:
+
+### Core Agent System
 
 1. **Planner**: Analyzes tasks and generates execution plans
 2. **Executor**: Executes tasks using available tools
@@ -154,6 +205,37 @@ The agent operates in a loop:
 ```
 Planning → User Confirmation → Execution → Reflection → (repeat if needed)
 ```
+
+### TUI System
+
+The TUI provides a real-time, interactive interface built with ink (React for CLI):
+
+**Interface Layout:**
+```
+┌─────────────────────────────────────────────────────────┐
+│ Header: Project Info | Phase | Status                   │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│ Content Area: Activity Stream                           │
+│   • Agent thinking process                              │
+│   • Tool calls and results                              │
+│   • Bash command execution                              │
+│   • Messages and errors                                 │
+│                                                          │
+├─────────────────────────────────────────────────────────┤
+│ Status Bar: Tasks | Tokens | Cost                       │
+├─────────────────────────────────────────────────────────┤
+│ Input Box: Your message... (with shortcuts help)        │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- Real-time activity streaming
+- Automatic session saving every 60 seconds
+- Command history navigation
+- Debug mode for troubleshooting
+- Keyboard shortcuts for common actions
+- Error boundaries for stability
 
 ## Tools
 

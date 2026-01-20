@@ -3,7 +3,7 @@
  */
 
 import chalk from 'chalk';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import chokidar from 'chokidar';
 import { LogEntry } from '../types';
 

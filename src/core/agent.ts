@@ -12,6 +12,7 @@ import { Executor } from './executor';
 import { Reflector } from './reflector';
 import { LLMManager } from '../llm/manager';
 import { ToolManager } from '../tools/manager';
+import { EventEmitter } from './event-emitter';
 import type { ConfirmationResult } from './types';
 import { generateId } from '../utils';
 
@@ -25,6 +26,7 @@ export class Agent {
   private reflector: Reflector;
   private config: GlobalConfig;
   private logger: ILogger;
+  private toolManager: ToolManager;
 
   constructor(config: GlobalConfig, logger: ILogger) {
     this.config = config;
@@ -37,7 +39,7 @@ export class Agent {
     const { FileSnippetStorage } = require('../storage/snippet-storage');
     const snippetStorage = new FileSnippetStorage(config.storage.snippetDir);
 
-    const toolManager = new ToolManager(
+    this.toolManager = new ToolManager(
       config.tools,
       logger,
       snippetStorage,
@@ -48,7 +50,7 @@ export class Agent {
     this.planner = new Planner(llmManager.getClient('planner'), logger);
     this.executor = new Executor(
       llmManager.getClient('executor'),
-      toolManager,
+      this.toolManager,
       logger,
       this.stateManager
     );
@@ -293,5 +295,19 @@ export class Agent {
    */
   getStateManager(): StateManager {
     return this.stateManager;
+  }
+
+  /**
+   * Get the event emitter
+   */
+  getEventEmitter(): EventEmitter {
+    return this.stateManager.getEventEmitter();
+  }
+
+  /**
+   * Get the tool manager
+   */
+  getToolManager(): ToolManager {
+    return this.toolManager;
   }
 }

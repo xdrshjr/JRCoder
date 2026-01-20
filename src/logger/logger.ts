@@ -4,8 +4,8 @@
 
 import winston from 'winston';
 import chalk from 'chalk';
-import * as path from 'path';
-import * as fs from 'fs-extra';
+import path from 'path';
+import fs from 'fs-extra';
 import type { ILogger } from './interfaces';
 import type { GlobalConfig, LLMRequest, LLMResponse, ToolResult } from '../types';
 

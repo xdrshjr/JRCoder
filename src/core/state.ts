@@ -59,13 +59,18 @@ export class StateManager {
    * Update the current phase
    */
   updatePhase(phase: AgentPhase): void {
+    const from = this.state.phase;
     this.state.phase = phase;
     this.eventEmitter.emit({
       type: 'phase_changed',
       timestamp: Date.now(),
-      data: { phase },
+      data: { from, phase },
     });
-    this.logger.info(`Phase changed to: ${phase}`);
+    this.logger.info(`Phase changed from ${from} to ${phase}`, {
+      type: 'phase_changed',
+      from,
+      to: phase,
+    });
   }
 
   /**
@@ -88,9 +93,19 @@ export class StateManager {
     this.eventEmitter.emit({
       type: 'iteration_started',
       timestamp: Date.now(),
-      data: { iteration: this.state.currentIteration },
+      data: {
+        iteration: this.state.currentIteration,
+        maxIterations: this.state.maxIterations,
+      },
     });
-    this.logger.info(`Iteration ${this.state.currentIteration} started`);
+    this.logger.info(
+      `Iteration ${this.state.currentIteration}/${this.state.maxIterations} started`,
+      {
+        type: 'iteration_started',
+        iteration: this.state.currentIteration,
+        maxIterations: this.state.maxIterations,
+      }
+    );
   }
 
   /**

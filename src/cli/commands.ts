@@ -12,7 +12,9 @@ import { DisplayManager } from './display';
 import { ReportGenerator } from './report-generator';
 import { LogViewer } from './log-viewer';
 import { FileSessionStorage } from '../storage/session-storage';
-import * as fs from 'fs-extra';
+import { runWithTUI } from './tui';
+import { VERSION } from '../index';
+import fs from 'fs-extra';
 
 /**
  * Apply CLI options to configuration
@@ -78,28 +80,117 @@ export async function runCommand(task: string, options: any): Promise<void> {
 
     // 4. Initialize logger
     const logger = new Logger(config.logging);
-    logger.info('OpenJRAgent started', { task, options });
+    logger.info('OpenJRAgent started', {
+      type: 'run_command_start',
+      task,
+      options,
+      tuiMode: options.tui !== false,
+    });
 
-    // 5. Create agent (resume functionality to be implemented)
-    const agent = new Agent(config, logger);
+    // 5. Check if TUI mode is enabled (default: true, unless --no-tui is specified)
+    const useTUI = options.tui !== false;
 
-    if (options.resume) {
-      display.warnSpinner('Session resume not yet implemented, starting new session');
+    if (useTUI) {
+      logger.info('Starting with TUI interface', {
+        type: 'tui_mode_selected',
+        task,
+      });
+
+      // Run with TUI
+      await runWithTUI({
+        task,
+        config,
+        logger,
+        projectName: 'OpenJRAgent',
+        version: VERSION,
+      });
+    } else {
+      logger.info('Starting with legacy CLI mode', {
+        type: 'legacy_cli_mode_selected',
+        task,
+      });
+
+      // 6. Create agent (resume functionality to be implemented)
+      const agent = new Agent(config, logger);
+
+      if (options.resume) {
+        display.warnSpinner('Session resume not yet implemented, starting new session');
+      }
+
+      // 7. Run agent in legacy CLI mode
+      console.log(chalk.cyan('\n🤖 Starting Agent Execution\n'));
+      console.log(chalk.white('Task:'), chalk.yellow(task));
+      console.log();
+
+      await agent.run(task);
+
+      // 8. Show summary (to be implemented when Agent.getState() is available)
+      // display.showSummary(agent.getState());
+
+      logger.info('OpenJRAgent completed successfully', {
+        type: 'run_command_complete',
+      });
     }
-
-    // 6. Run agent
-    console.log(chalk.cyan('\n🤖 Starting Agent Execution\n'));
-    console.log(chalk.white('Task:'), chalk.yellow(task));
-    console.log();
-
-    await agent.run(task);
-
-    // 7. Show summary (to be implemented when Agent.getState() is available)
-    // display.showSummary(agent.getState());
-
-    logger.info('OpenJRAgent completed successfully');
   } catch (error) {
     display.failSpinner('Execution failed');
+    display.showError(error as Error);
+    process.exit(1);
+  }
+}
+
+/**
+ * Start command - Launch TUI without initial task
+ */
+export async function startCommand(options: any): Promise<void> {
+  const display = new DisplayManager();
+
+  try {
+    // 1. Load configuration
+    display.showSpinner('Loading configuration...');
+    let config = ConfigLoader.load(options.config);
+
+    // 2. Apply CLI options
+    config = applyCliOptions(config, options);
+
+    // 3. Apply preset if specified
+    if (options.preset) {
+      if (CONFIG_PRESETS[options.preset]) {
+        config = ConfigLoader.merge(config, CONFIG_PRESETS[options.preset]);
+        display.updateSpinner(`Applied preset: ${options.preset}`);
+      } else {
+        display.failSpinner(`Unknown preset: ${options.preset}`);
+        console.log(chalk.yellow(`Available presets: ${Object.keys(CONFIG_PRESETS).join(', ')}`));
+        return;
+      }
+    }
+
+    display.succeedSpinner('Configuration loaded');
+
+    // 4. Initialize logger
+    const logger = new Logger(config.logging);
+    logger.info('OpenJRAgent TUI started without initial task', {
+      type: 'start_command',
+      options,
+    });
+
+    // 5. Launch TUI without initial task
+    logger.info('Launching TUI interface', {
+      type: 'tui_launch',
+    });
+
+    await runWithTUI({
+      task: '', // Empty task - user will input task in TUI
+      config,
+      logger,
+      projectName: 'OpenJRAgent',
+      version: VERSION,
+    });
+
+    logger.info('TUI session ended', {
+      type: 'start_command_complete',
+    });
+  } catch (error) {
+    display.failSpinner('Failed to start TUI');
     display.showError(error as Error);
     process.exit(1);
   }

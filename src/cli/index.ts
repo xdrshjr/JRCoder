@@ -9,6 +9,7 @@ import chalk from 'chalk';
 import { VERSION } from '../index';
 import {
   runCommand,
+  startCommand,
   showConfigCommand,
   exportConfigCommand,
   viewLogsCommand,
@@ -41,9 +42,37 @@ program
   .option('--workspace <path>', 'Workspace directory')
   .option('--resume <sessionId>', 'Resume from saved session')
   .option('--preset <name>', 'Use configuration preset (fast|quality|local|economy)')
+  .option('--tui', 'Use TUI interface (default)')
+  .option('--no-tui', 'Disable TUI interface (use legacy CLI mode)')
   .action(async (task, options) => {
     try {
       await runCommand(task, options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ============================================================================
+// Start Command: Launch TUI without initial task
+// ============================================================================
+
+program
+  .command('start')
+  .description('Start TUI interface (enter task after launch)')
+  .option('-c, --config <path>', 'Config file path')
+  .option('--max-iterations <number>', 'Maximum iterations', parseInt)
+  .option('--no-reflection', 'Disable reflection phase')
+  .option('--no-confirmation', 'Skip user confirmation')
+  .option('--planner-model <model>', 'Planner model name')
+  .option('--executor-model <model>', 'Executor model name')
+  .option('--reflector-model <model>', 'Reflector model name')
+  .option('--log-level <level>', 'Log level (debug|info|warn|error)')
+  .option('--workspace <path>', 'Workspace directory')
+  .option('--preset <name>', 'Use configuration preset (fast|quality|local|economy)')
+  .action(async (options) => {
+    try {
+      await startCommand(options);
     } catch (error) {
       console.error(chalk.red('Error:'), (error as Error).message);
       process.exit(1);

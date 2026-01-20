@@ -69,8 +69,17 @@ npm run format:check
 The CLI binary is `openjragent` (defined in package.json bin field).
 
 ```bash
-# Run agent with a task
+# Start TUI directly without task (recommended)
+openjragent start
+
+# Run agent with a task (uses modern TUI by default)
 openjragent run "task description"
+
+# Run with TUI interface (explicit)
+openjragent run "task" --tui
+
+# Run without TUI (legacy CLI mode)
+openjragent run "task" --no-tui
 
 # Run with custom configuration
 openjragent run "task" --config ./my-config.json
@@ -88,6 +97,9 @@ openjragent run "task" --resume <sessionId>
 # Use configuration preset
 openjragent run "task" --preset quality
 
+# Start TUI with preset
+openjragent start --preset quality
+
 # View configuration
 openjragent config:show
 
@@ -103,6 +115,19 @@ openjragent report --session <id> --format markdown
 # List all sessions
 openjragent sessions
 ```
+
+### TUI Keyboard Shortcuts
+
+When running with TUI mode:
+- **Enter**: Submit user input
+- **Ctrl+C**: Exit the application
+- **Ctrl+S**: Manually save current session
+- **Ctrl+L**: Clear screen activities
+- **Ctrl+P**: Pause/Resume agent execution
+- **Ctrl+D**: Toggle debug mode
+- **Ctrl+E**: Export logs to file
+- **F1**: Show/Hide help overlay
+- **↑/↓**: Navigate command history
 
 ## Architecture
 
@@ -141,6 +166,44 @@ The system operates in a loop with four phases:
 - **Event Emitter** (`src/core/event-emitter.ts`): Event-driven communication between components
 - **Tool Manager** (`src/tools/manager.ts`): Manages tool registration and execution
 - **LLM Manager** (`src/llm/manager.ts`): Manages multiple LLM clients for different roles
+- **TUI System** (`src/cli/tui/`): Modern text user interface for enhanced user experience
+
+### TUI (Text User Interface) System
+
+The TUI provides a modern, interactive interface similar to Claude Code and Gemini CLI. Built with ink (React for CLI) for a component-based architecture.
+
+**Key Features:**
+- **Real-time Status Display**: Header showing current phase, project info, and online status
+- **Activity Stream**: Hierarchical display of agent thinking, tool calls, bash execution, and results
+- **Interactive Input**: Advanced input box with command history, multiline support, and keyboard shortcuts
+- **Session Management**: Automatic session saving/restoration and history tracking
+- **Progress Tracking**: Status bar with task progress, token usage, and cost statistics
+- **Debug Mode**: Optional debug overlay for development and troubleshooting
+
+**TUI Components** (`src/cli/tui/components/`):
+- `App.tsx`: Main application component with state management
+- `Header.tsx`: Top bar with project name, version, phase indicator, and status
+- `ContentArea.tsx`: Scrollable activity display area
+- `ActivityItem.tsx`: Renders different activity types (thinking, tool calls, bash, messages, errors)
+- `StatusBar.tsx`: Bottom bar with statistics (tasks, tokens, cost)
+- `AdvancedInput.tsx`: Input box with history navigation and multiline mode
+- `ErrorBoundary.tsx`: Error handling wrapper
+- `LoadingIndicator.tsx`, `EmptyState.tsx`: UI state components
+
+**TUI Architecture** (`src/cli/tui/`):
+- `event-bus.ts`: Central event system for TUI updates
+- `adapters/`: Connect Agent events to TUI
+  - `ThinkingAdapter.ts`: Captures Planner/Reflector thinking process
+  - `ToolAdapter.ts`: Monitors tool execution lifecycle
+  - `BashAdapter.ts`: Streams bash command output
+  - `LogAdapter.ts`: Filters and displays important logs
+- `managers/`: Session and state management
+  - `SessionHistoryManager.ts`: Command history persistence
+  - `AutoSaveManager.ts`: Periodic state snapshots
+- `hooks/`: Custom React hooks
+  - `useKeyBindings.ts`: Keyboard shortcut handling
+- `utils/`: Helper functions
+  - `activityMerger.ts`: Merge similar activities to prevent UI clutter
 
 ### Tool System
 
@@ -229,6 +292,15 @@ State can be:
 - `src/tools/`: Tool implementations
 - `src/llm/`: LLM client adapters
 - `src/cli/`: CLI interface and commands
+  - `src/cli/tui/`: Modern TUI system (ink + React)
+    - `components/`: React components (Header, ContentArea, StatusBar, InputBox, ActivityItem, etc.)
+    - `adapters/`: Event adapters connecting Agent to TUI (ThinkingAdapter, ToolAdapter, BashAdapter, LogAdapter)
+    - `managers/`: Session and state management (SessionHistoryManager, AutoSaveManager)
+    - `hooks/`: Custom React hooks (useKeyBindings)
+    - `utils/`: Utility functions (activity merging, formatting)
+    - `types.ts`: TUI-specific TypeScript types
+    - `event-bus.ts`: Central event system
+    - `index.ts`: Main TUI exports
 - `src/config/`: Configuration loading and validation
 - `src/logger/`: Logging system
 - `src/storage/`: Storage implementations (memory, file)
@@ -236,6 +308,8 @@ State can be:
 - `src/__tests__/`: Unit tests
 - `tests/`: Integration tests
 - `docs/`: Technical documentation (architecture, design docs, TODOs)
+  - `docs/base/`: Core architecture documentation
+  - `docs/dev-plan/`: Development plans and roadmaps
 - `config/`: Configuration files
 - `logs/`: Log output directory
 - `.workspace/`: Working directory for snippets and sessions
@@ -280,3 +354,7 @@ If max iterations is reached, the agent terminates with a summary of progress.
 - LLM requests should include timeout configuration
 - State should be saved regularly to support recovery from crashes
 - Use the logger for all significant events (don't use console.log directly except in CLI display code)
+- TUI components follow React best practices with hooks and functional components
+- Event-driven architecture keeps TUI decoupled from core Agent logic
+- Session management ensures user work is never lost with auto-save every 60 seconds
+- DO NOT use emojis in log messages or user-facing text unless explicitly requested

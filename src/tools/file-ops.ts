@@ -2,8 +2,8 @@
  * File operation tools
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import fs from 'fs/promises';
+import path from 'path';
 import { BaseTool } from './base';
 import type { ToolParameter, ToolResult } from '../types';
 import { PathValidator, FileSizeValidator } from './validators';

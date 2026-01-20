@@ -79,13 +79,29 @@ export class Executor {
   async execute(plan: Plan, context: AgentState): Promise<ExecutionResult> {
     const results: TaskResult[] = [];
 
-    this.logger.info(`Starting execution of ${plan.tasks.length} tasks`);
+    this.logger.info(`Starting execution of ${plan.tasks.length} tasks`, {
+      type: 'execution_started',
+      taskCount: plan.tasks.length,
+    });
 
     while (true) {
       const nextTask = this.getNextTask(plan);
       if (!nextTask) break;
 
-      this.logger.info(`Executing task: ${nextTask.title} (priority: ${nextTask.priority})`);
+      this.logger.info(`Executing task: ${nextTask.title} (priority: ${nextTask.priority})`, {
+        type: 'task_started',
+        taskId: nextTask.id,
+        taskTitle: nextTask.title,
+        priority: nextTask.priority,
+      });
+
+      // Emit task_started event
+      this.stateManager.getEventEmitter().emit({
+        type: 'task_started',
+        timestamp: Date.now(),
+        data: { task: nextTask },
+      });
+
       this.updateTaskStatus(plan, nextTask.id, 'in_progress');
 
       try {
@@ -94,9 +110,36 @@ export class Executor {
 
         if (result.success) {
           this.updateTaskStatus(plan, nextTask.id, 'completed', result.output);
-          this.logger.info(`Task completed: ${nextTask.title}`);
+          this.logger.info(`Task completed: ${nextTask.title}`, {
+            type: 'task_completed',
+            taskId: nextTask.id,
+            taskTitle: nextTask.title,
+            status: 'completed',
+          });
+
+          // Emit task_completed event
+          this.stateManager.getEventEmitter().emit({
+            type: 'task_completed',
+            timestamp: Date.now(),
+            data: { task: { ...nextTask, status: 'completed' as const } },
+          });
         } else {
           this.updateTaskStatus(plan, nextTask.id, 'failed', undefined, result.error);
+
+          this.logger.warn(`Task failed: ${nextTask.title}`, {
+            type: 'task_completed',
+            taskId: nextTask.id,
+            taskTitle: nextTask.title,
+            status: 'failed',
+            error: result.error,
+          });
+
+          // Emit task_completed event with failed status
+          this.stateManager.getEventEmitter().emit({
+            type: 'task_completed',
+            timestamp: Date.now(),
+            data: { task: { ...nextTask, status: 'failed' as const } },
+          });
 
           // If critical task fails, stop execution
           if (nextTask.priority <= 2) {
@@ -110,6 +153,17 @@ export class Executor {
       } catch (error) {
         this.logger.error(`Task execution failed: ${nextTask.title}`, error as Error);
         this.updateTaskStatus(plan, nextTask.id, 'failed', undefined, (error as Error).message);
+
+        // Emit error event
+        this.stateManager.getEventEmitter().emit({
+          type: 'error_occurred',
+          timestamp: Date.now(),
+          data: {
+            error: error as Error,
+            context: { task: nextTask },
+          },
+        });
+
         results.push({
           taskId: nextTask.id,
           success: false,
@@ -127,7 +181,13 @@ export class Executor {
     }
 
     this.logger.info(
-      `Execution finished: ${results.length} tasks executed, ${results.filter((r) => r.success).length} successful`
+      `Execution finished: ${results.length} tasks executed, ${results.filter((r) => r.success).length} successful`,
+      {
+        type: 'execution_completed',
+        totalTasks: results.length,
+        completedTasks: results.filter((r) => r.success).length,
+        failedTasks: results.filter((r) => !r.success).length,
+      }
     );
 
     return {
@@ -241,8 +301,38 @@ export class Executor {
     const results: any[] = [];
 
     for (const toolCall of toolCalls) {
+      // Emit tool_called event
+      this.stateManager.getEventEmitter().emit({
+        type: 'tool_called',
+        timestamp: Date.now(),
+        data: toolCall,
+      });
+
+      this.logger.info('Tool called', {
+        type: 'tool_called',
+        toolName: toolCall.name,
+        toolCallId: toolCall.id,
+      });
+
       const result = await this.toolManager.execute(toolCall);
       context.metadata.toolCallsCount++;
+
+      // Emit tool_completed event
+      this.stateManager.getEventEmitter().emit({
+        type: 'tool_completed',
+        timestamp: Date.now(),
+        data: {
+          toolCall,
+          result,
+        },
+      });
+
+      this.logger.info('Tool completed', {
+        type: 'tool_completed',
+        toolName: toolCall.name,
+        toolCallId: toolCall.id,
+        success: result.success,
+      });
 
       results.push({
         ...result,
