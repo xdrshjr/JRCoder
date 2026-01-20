@@ -31,6 +31,7 @@ describe('Tool System', () => {
       'file_read',
       'file_write',
       'file_list',
+      'file_delete',
       'snippet_save',
       'snippet_load',
       'snippet_list',
@@ -65,6 +66,7 @@ describe('Tool System', () => {
       expect(toolNames).toContain('file_read');
       expect(toolNames).toContain('file_write');
       expect(toolNames).toContain('file_list');
+      expect(toolNames).toContain('file_delete');
       expect(toolNames).toContain('snippet_save');
       expect(toolNames).toContain('snippet_load');
       expect(toolNames).toContain('snippet_list');
@@ -170,6 +172,93 @@ describe('Tool System', () => {
       expect(result.success).toBe(true);
       expect(result.data?.files).toBeDefined();
       expect(result.data?.files.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('FileDeleteTool', () => {
+    it('should delete file successfully', async () => {
+      const testFile = path.join(testDir, 'to-delete.txt');
+      await fs.writeFile(testFile, 'This file will be deleted');
+
+      const toolCall: ToolCall = {
+        id: 'test-delete-1',
+        name: 'file_delete',
+        arguments: { path: 'to-delete.txt' },
+      };
+
+      const result = await toolManager.execute(toolCall);
+      expect(result.success).toBe(true);
+      expect(result.data?.type).toBe('file');
+
+      const exists = await fs.pathExists(testFile);
+      expect(exists).toBe(false);
+    });
+
+    it('should delete empty directory', async () => {
+      const testDir2 = path.join(testDir, 'empty-dir');
+      await fs.ensureDir(testDir2);
+
+      const toolCall: ToolCall = {
+        id: 'test-delete-2',
+        name: 'file_delete',
+        arguments: { path: 'empty-dir' },
+      };
+
+      const result = await toolManager.execute(toolCall);
+      expect(result.success).toBe(true);
+      expect(result.data?.type).toBe('directory');
+
+      const exists = await fs.pathExists(testDir2);
+      expect(exists).toBe(false);
+    });
+
+    it('should delete directory recursively', async () => {
+      const testDir2 = path.join(testDir, 'nested-dir');
+      await fs.ensureDir(path.join(testDir2, 'subdir'));
+      await fs.writeFile(path.join(testDir2, 'file.txt'), 'content');
+      await fs.writeFile(path.join(testDir2, 'subdir', 'file2.txt'), 'content2');
+
+      const toolCall: ToolCall = {
+        id: 'test-delete-3',
+        name: 'file_delete',
+        arguments: { path: 'nested-dir', recursive: true },
+      };
+
+      const result = await toolManager.execute(toolCall);
+      expect(result.success).toBe(true);
+      expect(result.data?.recursive).toBe(true);
+
+      const exists = await fs.pathExists(testDir2);
+      expect(exists).toBe(false);
+    });
+
+    it('should succeed when deleting non-existent file', async () => {
+      const toolCall: ToolCall = {
+        id: 'test-delete-4',
+        name: 'file_delete',
+        arguments: { path: 'non-existent.txt' },
+      };
+
+      const result = await toolManager.execute(toolCall);
+      expect(result.success).toBe(true);
+      expect(result.data?.message).toContain('does not exist');
+    });
+
+    it('should handle absolute paths', async () => {
+      const testFile = path.join(testDir, 'absolute-delete.txt');
+      await fs.writeFile(testFile, 'content');
+
+      const toolCall: ToolCall = {
+        id: 'test-delete-5',
+        name: 'file_delete',
+        arguments: { path: testFile },
+      };
+
+      const result = await toolManager.execute(toolCall);
+      expect(result.success).toBe(true);
+
+      const exists = await fs.pathExists(testFile);
+      expect(exists).toBe(false);
     });
   });
 

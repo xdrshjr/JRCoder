@@ -261,3 +261,72 @@ export class FileListTool extends BaseTool {
     return regex.test(filename);
   }
 }
+
+/**
+ * File delete tool
+ */
+export class FileDeleteTool extends BaseTool {
+  readonly name = 'file_delete';
+  readonly description = '删除文件或目录（危险操作，仅在确认是错误创建的文件时使用）';
+  readonly dangerous = true;
+  readonly parameters: ToolParameter[] = [
+    {
+      name: 'path',
+      type: 'string',
+      description:
+        '文件或目录路径（可以是相对路径或绝对路径。相对路径相对于工作目录，绝对路径可以指向任何位置）',
+      required: true,
+    },
+    {
+      name: 'recursive',
+      type: 'boolean',
+      description: '是否递归删除目录（默认false，仅删除空目录）',
+      required: false,
+      default: false,
+    },
+  ];
+
+  constructor(private workspaceDir: string) {
+    super();
+  }
+
+  async execute(args: Record<string, any>): Promise<ToolResult> {
+    const { path: filePath, recursive = false } = args;
+
+    try {
+      const safePath = PathValidator.validate(filePath, this.workspaceDir);
+
+      // Check if path exists
+      const stats = await fs.stat(safePath);
+
+      // Delete file or directory
+      await fs.rm(safePath, { recursive, force: true });
+
+      return {
+        success: true,
+        data: {
+          path: filePath,
+          absolutePath: safePath,
+          type: stats.isDirectory() ? 'directory' : 'file',
+          recursive,
+        },
+      };
+    } catch (error: any) {
+      // If file doesn't exist, it's already deleted (success)
+      if (error.code === 'ENOENT') {
+        return {
+          success: true,
+          data: {
+            path: filePath,
+            message: 'Path does not exist (already deleted or never existed)',
+          },
+        };
+      }
+
+      return {
+        success: false,
+        error: `Failed to delete file/directory: ${error.message}`,
+      };
+    }
+  }
+}

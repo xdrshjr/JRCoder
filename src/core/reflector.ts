@@ -22,6 +22,7 @@ const REFLECTOR_SYSTEM_PROMPT = `你是一个反思评估器。你的职责是�
 - 代码质量：是否符合最佳实践
 - 错误处理：是否有未处理的错误
 - 完整性：是否有遗漏的功能
+- 文件清理：是否正确处理了错误创建的文件
 
 输出格式（JSON）：
 {
@@ -48,6 +49,7 @@ const REFLECTOR_SYSTEM_PROMPT = `你是一个反思评估器。你的职责是�
 - 问题要具体，建议要可行
 - **重点检查：是否实际创建了代码文件（使用file_write工具）**
 - **如果任务要求创建代码但只使用了code_query，这是一个严重问题**
+- **如果在执行过程中发现了错误创建的文件，应该在改进建议中提示Executor使用file_delete进行清理**
 - **只有在遇到真正无法解决的问题时，才设置blocked为true**（例如：权限不足、缺少关键信息、代码结构冲突）
 - 如果只是任务没有完成但可以继续执行，设置blocked为false，goalAchieved为false，并提供改进建议
 - 如果目标已达成，设置goalAchieved为true

@@ -344,7 +344,6 @@ export interface HeaderProps {
  */
 export interface ContentAreaProps {
   activities: Activity[];
-  maxHeight?: number;
   enableMerging?: boolean;
   mergeConfig?: {
     mergeWindowMs?: number;

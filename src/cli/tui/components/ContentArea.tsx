@@ -16,12 +16,11 @@ import { logger } from '../logger';
  * Features:
  * - Empty state when no activities
  * - Activity merging to reduce clutter
- * - Shows only the most recent activities that fit within maxHeight
- * - Automatic scrolling to bottom
+ * - Full-screen display using flexGrow
+ * - Shows all activities (terminal handles scrolling)
  */
 export const ContentArea: React.FC<ContentAreaProps> = ({
   activities,
-  maxHeight = 20,
   enableMerging = true,
   mergeConfig,
 }) => {
@@ -48,7 +47,8 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
         type: 'activities_merged',
         originalCount: activities.length,
         mergedCount: merged.length,
-        reduction: ((activities.length - merged.length) / activities.length * 100).toFixed(2) + '%',
+        reduction:
+          (((activities.length - merged.length) / activities.length) * 100).toFixed(2) + '%',
       });
 
       return merged;
@@ -67,36 +67,22 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
         flexDirection="column"
         alignItems="center"
         justifyContent="center"
-        height={maxHeight}
+        flexGrow={1}
         paddingY={2}
       >
-        <EmptyState
-          message="No activities yet"
-          helperText="Agent is thinking..."
-          icon="💭"
-        />
+        <EmptyState message="No activities yet" helperText="Agent is thinking..." icon="💭" />
       </Box>
     );
   }
 
-  // Calculate which activities to show based on maxHeight
-  // We'll show the most recent activities that fit within maxHeight
-  const itemsToShow = processedActivities.slice(-maxHeight);
-
   logger.debug('ContentArea rendering', {
     type: 'content_area_render',
     totalActivities: processedActivities.length,
-    displayedActivities: itemsToShow.length,
-    maxHeight,
   });
 
   return (
-    <Box
-      flexDirection="column"
-      paddingX={1}
-      paddingY={1}
-    >
-      {itemsToShow.map((activity: Activity) => (
+    <Box flexDirection="column" flexGrow={1} paddingX={1} paddingY={1}>
+      {processedActivities.map((activity: Activity) => (
         <ActivityItem key={activity.id} activity={activity} />
       ))}
       <Box ref={bottomRef} />

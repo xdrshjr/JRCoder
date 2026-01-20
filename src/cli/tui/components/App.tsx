@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, useApp, Text } from 'ink';
+import { Box, useApp, Text, useStdout } from 'ink';
 import { v4 as uuid } from 'uuid';
 import { Header } from './Header';
 import { ContentArea } from './ContentArea';
@@ -30,12 +30,16 @@ export const TUIApp: React.FC<TUIAppProps> = ({
   autoSaveIntervalMs = 60000,
 }) => {
   const { exit } = useApp();
+  const { stdout } = useStdout();
 
   // Generate or use provided session ID
   const [sessionId] = useState(() => providedSessionId || uuid());
 
   // Use provided event bus or create new one
   const [eventBus] = useState(() => providedEventBus || new TUIEventBus(logger));
+
+  // Terminal height state
+  const [terminalHeight, setTerminalHeight] = useState(stdout.rows || 24);
 
   // TUI state
   const [state, setState] = useState<TUIState>({
@@ -60,9 +64,7 @@ export const TUIApp: React.FC<TUIAppProps> = ({
   const [hasStarted, setHasStarted] = useState(false);
 
   // Managers
-  const [historyManager] = useState(
-    () => new SessionHistoryManager({ logger })
-  );
+  const [historyManager] = useState(() => new SessionHistoryManager({ logger }));
   const [autoSaveManager] = useState(
     () =>
       new AutoSaveManager({
@@ -149,6 +151,13 @@ export const TUIApp: React.FC<TUIAppProps> = ({
       });
     });
 
+    // Handle terminal resize
+    const handleResize = () => {
+      setTerminalHeight(stdout.rows || 24);
+    };
+
+    stdout.on?.('resize', handleResize);
+
     // Cleanup on unmount
     return () => {
       logger.info('TUI App unmounting', {
@@ -157,6 +166,9 @@ export const TUIApp: React.FC<TUIAppProps> = ({
       });
 
       autoSaveManager.stop();
+
+      // Cleanup resize listener
+      stdout.off?.('resize', handleResize);
 
       // Save history
       historyManager.save(sessionId).catch((error) => {
@@ -278,82 +290,91 @@ export const TUIApp: React.FC<TUIAppProps> = ({
   /**
    * Add activity helper
    */
-  const addActivity = useCallback((activity: Activity) => {
-    setState((prev: TUIState) => ({
-      ...prev,
-      activities: [...prev.activities, activity],
-    }));
+  const addActivity = useCallback(
+    (activity: Activity) => {
+      setState((prev: TUIState) => ({
+        ...prev,
+        activities: [...prev.activities, activity],
+      }));
 
-    if (debugMode) {
-      logger.debug('Activity added', {
-        type: 'activity_added',
-        activityType: activity.type,
-        activityId: activity.id,
-      });
-    }
-  }, [debugMode]);
+      if (debugMode) {
+        logger.debug('Activity added', {
+          type: 'activity_added',
+          activityType: activity.type,
+          activityId: activity.id,
+        });
+      }
+    },
+    [debugMode]
+  );
 
   /**
    * Update activity helper
    */
-  const updateActivity = useCallback((activityId: string, updates: Partial<Activity>) => {
-    setState((prev: TUIState) => ({
-      ...prev,
-      activities: prev.activities.map((activity) =>
-        activity.id === activityId ? ({ ...activity, ...updates } as Activity) : activity
-      ),
-    }));
+  const updateActivity = useCallback(
+    (activityId: string, updates: Partial<Activity>) => {
+      setState((prev: TUIState) => ({
+        ...prev,
+        activities: prev.activities.map((activity) =>
+          activity.id === activityId ? ({ ...activity, ...updates } as Activity) : activity
+        ),
+      }));
 
-    if (debugMode) {
-      logger.debug('Activity updated', {
-        type: 'activity_updated',
-        activityId,
-        updates: Object.keys(updates),
-      });
-    }
-  }, [debugMode]);
+      if (debugMode) {
+        logger.debug('Activity updated', {
+          type: 'activity_updated',
+          activityId,
+          updates: Object.keys(updates),
+        });
+      }
+    },
+    [debugMode]
+  );
 
   /**
    * Handle user input
    */
-  const handleUserInput = useCallback((input: string) => {
-    logger.info('User input received', {
-      type: 'user_input',
-      length: input.length,
-      sessionId,
-      hasStarted,
-    });
-
-    // Add to history
-    historyManager.add(input, sessionId);
-
-    // Emit user input event
-    eventBus.emit({
-      type: 'user:input',
-      timestamp: Date.now(),
-      input,
-    });
-
-    // Add user message activity
-    addActivity({
-      id: uuid(),
-      type: 'message',
-      timestamp: Date.now(),
-      content: `User: ${input}`,
-      level: 'info',
-    });
-
-    // Mark as started if this is the first task
-    if (!hasStarted) {
-      setHasStarted(true);
-      logger.info('First task received, marking as started', {
-        type: 'first_task_received',
+  const handleUserInput = useCallback(
+    (input: string) => {
+      logger.info('User input received', {
+        type: 'user_input',
+        length: input.length,
+        sessionId,
+        hasStarted,
       });
-    }
 
-    // Re-enable input after agent completes
-    // The input will be disabled while agent is processing via isInputDisabled logic
-  }, [sessionId, eventBus, historyManager, addActivity, hasStarted]);
+      // Add to history
+      historyManager.add(input, sessionId);
+
+      // Emit user input event
+      eventBus.emit({
+        type: 'user:input',
+        timestamp: Date.now(),
+        input,
+      });
+
+      // Add user message activity
+      addActivity({
+        id: uuid(),
+        type: 'message',
+        timestamp: Date.now(),
+        content: `User: ${input}`,
+        level: 'info',
+      });
+
+      // Mark as started if this is the first task
+      if (!hasStarted) {
+        setHasStarted(true);
+        logger.info('First task received, marking as started', {
+          type: 'first_task_received',
+        });
+      }
+
+      // Re-enable input after agent completes
+      // The input will be disabled while agent is processing via isInputDisabled logic
+    },
+    [sessionId, eventBus, historyManager, addActivity, hasStarted]
+  );
 
   /**
    * Handle save session
@@ -497,11 +518,10 @@ export const TUIApp: React.FC<TUIAppProps> = ({
    */
   const isInputDisabled =
     isPaused ||
-    (hasStarted && (
-      state.agentPhase === 'planning' ||
-      state.agentPhase === 'executing' ||
-      state.agentPhase === 'reflecting'
-    ));
+    (hasStarted &&
+      (state.agentPhase === 'planning' ||
+        state.agentPhase === 'executing' ||
+        state.agentPhase === 'reflecting'));
 
   /**
    * Get command history for input
@@ -515,17 +535,8 @@ export const TUIApp: React.FC<TUIAppProps> = ({
     if (!showHelp) return null;
 
     return (
-      <Box
-        justifyContent="center"
-        alignItems="center"
-      >
-        <Box
-          borderStyle="double"
-          borderColor="cyan"
-          padding={2}
-          flexDirection="column"
-          width={80}
-        >
+      <Box justifyContent="center" alignItems="center">
+        <Box borderStyle="double" borderColor="cyan" padding={2} flexDirection="column" width={80}>
           <Text bold color="cyan">
             Keyboard Shortcuts Help
           </Text>
@@ -539,7 +550,7 @@ export const TUIApp: React.FC<TUIAppProps> = ({
   };
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" height={terminalHeight}>
       {/* Header */}
       <Header
         projectName={projectName}
@@ -550,7 +561,7 @@ export const TUIApp: React.FC<TUIAppProps> = ({
 
       {/* Content Area */}
       <Box flexGrow={1} paddingY={1}>
-        <ContentArea activities={state.activities} maxHeight={20} />
+        <ContentArea activities={state.activities} />
       </Box>
 
       {/* Status Bar */}
@@ -582,8 +593,8 @@ export const TUIApp: React.FC<TUIAppProps> = ({
       {debugMode && (
         <Box paddingX={1} borderStyle="single" borderColor="yellow">
           <Text color="yellow" dimColor>
-            [DEBUG] Session: {sessionId} | Activities: {state.activities.length} |
-            History: {historyManager.size()} | Paused: {isPaused.toString()}
+            [DEBUG] Session: {sessionId} | Activities: {state.activities.length} | History:{' '}
+            {historyManager.size()} | Paused: {isPaused.toString()}
           </Text>
         </Box>
       )}

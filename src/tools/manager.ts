@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { BaseTool } from './base';
 import { CodeQueryTool } from './code-query';
-import { FileReadTool, FileWriteTool, FileListTool } from './file-ops';
+import { FileReadTool, FileWriteTool, FileListTool, FileDeleteTool } from './file-ops';
 import { SnippetSaveTool, SnippetLoadTool, SnippetListTool } from './snippet';
 import { ShellExecTool } from './shell';
 import { AskUserTool } from './ask-user';
@@ -45,6 +45,7 @@ export class ToolManager {
       new FileReadTool(this.config.workspaceDir, this.config.maxFileSize),
       new FileWriteTool(this.config.workspaceDir),
       new FileListTool(this.config.workspaceDir),
+      new FileDeleteTool(this.config.workspaceDir),
       new SnippetSaveTool(snippetStorage),
       new SnippetLoadTool(snippetStorage),
       new SnippetListTool(snippetStorage),

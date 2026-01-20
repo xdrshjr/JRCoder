@@ -36,6 +36,7 @@
       "file_read",
       "file_write",
       "file_list",
+      "file_delete",
       "snippet_save",
       "snippet_load",
       "snippet_list",
