@@ -185,5 +185,11 @@ Input Commands:
   Ctrl+M    Toggle multiline mode
   ↑/↓       Navigate command history (single line mode)
   Ctrl+Enter Send message (multiline mode)
+
+Scrolling Activities:
+
+  PageUp/PageDown   Scroll through activities (30 at a time)
+  ↑/↓              Scroll through activities (5 at a time, when input disabled)
+  Esc              Return to auto-scroll mode
   `.trim();
 }

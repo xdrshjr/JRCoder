@@ -57,6 +57,20 @@ export const TERMINAL = {
 } as const;
 
 /**
+ * Scrolling Settings
+ */
+export const SCROLL = {
+  /** Small scroll step for arrow keys (in activities) */
+  STEP_SMALL: 5,
+
+  /** Large scroll step for Page keys (in activities) */
+  STEP_LARGE: 30,
+
+  /** Auto-scroll threshold - if within this many items from bottom, auto-scroll on new activity */
+  AUTO_THRESHOLD: 5,
+} as const;
+
+/**
  * Calculate the available height for ContentArea based on terminal height
  * and input mode.
  *

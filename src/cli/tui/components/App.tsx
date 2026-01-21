@@ -11,9 +11,11 @@ import { StatusBar } from './StatusBar';
 import { AdvancedInput } from './AdvancedInput';
 import { TUIEventBus } from '../event-bus';
 import { useKeyBindings, getKeyBindingsHelpText } from '../hooks/useKeyBindings';
+import { useScrollKeys } from '../hooks/useScrollKeys';
 import { SessionHistoryManager } from '../managers/SessionHistoryManager';
 import { AutoSaveManager } from '../managers/AutoSaveManager';
-import { calculateContentHeight } from '../constants';
+import { calculateContentHeight, ACTIVITY_DISPLAY, SCROLL } from '../constants';
+import { clampScrollOffset } from '../utils/activityWindow';
 import type { TUIAppProps, TUIState, Activity, AgentPhaseEvent, TUIEvent } from '../types';
 import { logger } from '../logger';
 
@@ -50,6 +52,8 @@ export const TUIApp: React.FC<TUIAppProps> = ({
     activities: [],
     isInputFocused: true,
     scrollPosition: 0,
+    scrollOffset: 0,
+    scrollMode: 'auto',
     stats: {
       totalTokens: 0,
       totalCost: 0,
@@ -521,6 +525,82 @@ export const TUIApp: React.FC<TUIAppProps> = ({
   }, [sessionId, historyManager, addActivity]);
 
   /**
+   * Handle scroll up
+   */
+  const handleScrollUp = useCallback(
+    (amount: number) => {
+      setState((prev) => ({
+        ...prev,
+        scrollOffset: clampScrollOffset(
+          prev.scrollOffset + amount,
+          prev.activities.length,
+          ACTIVITY_DISPLAY.MAX_VISIBLE_ACTIVITIES
+        ),
+        scrollMode: 'manual',
+      }));
+    },
+    []
+  );
+
+  /**
+   * Handle scroll down
+   */
+  const handleScrollDown = useCallback(
+    (amount: number) => {
+      setState((prev) => {
+        const newOffset = Math.max(0, prev.scrollOffset - amount);
+        return {
+          ...prev,
+          scrollOffset: newOffset,
+          scrollMode: newOffset === 0 ? 'auto' : 'manual',
+        };
+      });
+    },
+    []
+  );
+
+  /**
+   * Handle scroll to top (oldest activity)
+   */
+  const handleScrollTop = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      scrollOffset: Math.max(
+        0,
+        prev.activities.length - ACTIVITY_DISPLAY.MAX_VISIBLE_ACTIVITIES
+      ),
+      scrollMode: 'manual',
+    }));
+  }, []);
+
+  /**
+   * Handle scroll to bottom (newest activity)
+   */
+  const handleScrollBottom = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      scrollOffset: 0,
+      scrollMode: 'auto',
+    }));
+  }, []);
+
+  /**
+   * Auto-scroll to bottom when new activities arrive (if in auto mode or near bottom)
+   */
+  useEffect(() => {
+    if (
+      state.scrollMode === 'auto' ||
+      state.scrollOffset <= SCROLL.AUTO_THRESHOLD
+    ) {
+      setState((prev) => ({
+        ...prev,
+        scrollOffset: 0,
+        scrollMode: 'auto',
+      }));
+    }
+  }, [state.activities.length]);
+
+  /**
    * Setup keyboard shortcuts
    */
   useKeyBindings({
@@ -543,6 +623,27 @@ export const TUIApp: React.FC<TUIAppProps> = ({
         state.agentPhase === 'executing' ||
         state.agentPhase === 'reflecting' ||
         state.agentPhase === 'answering'));
+
+  /**
+   * Determine if scroll keys (arrow keys) should be active
+   * Active when:
+   * - Input is disabled (agent is working), OR
+   * - Input is in multiline mode, OR
+   * - Already scrolled (scrollOffset > 0)
+   */
+  const isScrollKeysActive =
+    isInputDisabled || isInputMultiline || state.scrollOffset > 0;
+
+  /**
+   * Setup scroll keyboard shortcuts
+   */
+  useScrollKeys({
+    isActive: isScrollKeysActive,
+    onScrollUp: handleScrollUp,
+    onScrollDown: handleScrollDown,
+    onScrollTop: handleScrollTop,
+    onScrollBottom: handleScrollBottom,
+  });
 
   /**
    * Get command history for input
@@ -582,7 +683,13 @@ export const TUIApp: React.FC<TUIAppProps> = ({
 
       {/* Content Area */}
       <Box flexGrow={1} paddingY={1}>
-        <ContentArea activities={state.activities} maxHeight={contentHeight} />
+        <ContentArea
+          activities={state.activities}
+          maxHeight={contentHeight}
+          scrollOffset={state.scrollOffset}
+          scrollMode={state.scrollMode}
+          totalActivities={state.activities.length}
+        />
       </Box>
 
       {/* Status Bar */}

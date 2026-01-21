@@ -12,3 +12,4 @@ export { TUIApp } from './App';
 export { ErrorBoundary } from './ErrorBoundary';
 export { LoadingIndicator } from './LoadingIndicator';
 export { EmptyState } from './EmptyState';
+export { ScrollIndicator } from './ScrollIndicator';

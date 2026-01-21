@@ -114,19 +114,24 @@ export const AdvancedInput: React.FC<AdvancedInputProps> = ({
       // Ignore input if disabled
       if (disabled) return;
 
+      // Let scroll keys pass through (don't handle them here)
+      if (key.pageUp || key.pageDown || key.escape) {
+        return;
+      }
+
       // Ctrl+M: Toggle multiline mode
       if (key.ctrl && input === 'm') {
         toggleMultiline();
         return;
       }
 
-      // Up arrow: Navigate history up
+      // Up arrow: Navigate history up (only in single-line mode)
       if (key.upArrow && !isMultiline) {
         navigateHistoryUp();
         return;
       }
 
-      // Down arrow: Navigate history down
+      // Down arrow: Navigate history down (only in single-line mode)
       if (key.downArrow && !isMultiline) {
         navigateHistoryDown();
         return;

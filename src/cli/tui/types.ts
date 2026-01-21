@@ -148,6 +148,10 @@ export interface TUIState {
   isInputFocused: boolean;
   scrollPosition: number;
 
+  // Scrolling state
+  scrollOffset: number; // Scroll offset from bottom (in activities)
+  scrollMode: 'auto' | 'manual'; // Auto: scroll to bottom on new activity, Manual: user control
+
   // Statistics
   stats: TUIStats;
 }
@@ -374,6 +378,12 @@ export interface ContentAreaProps {
   };
   /** Maximum height in terminal lines (for layout constraint) */
   maxHeight?: number;
+  /** Scroll offset from bottom (in activities) */
+  scrollOffset: number;
+  /** Scroll mode - auto or manual */
+  scrollMode: 'auto' | 'manual';
+  /** Total number of activities (for position calculation) */
+  totalActivities: number;
 }
 
 /**

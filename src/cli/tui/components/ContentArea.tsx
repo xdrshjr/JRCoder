@@ -7,6 +7,7 @@ import { Box, Text } from 'ink';
 import type { ContentAreaProps, Activity } from '../types';
 import { ActivityItem } from './ActivityItem';
 import { EmptyState } from './EmptyState';
+import { ScrollIndicator } from './ScrollIndicator';
 import { mergeActivities } from '../utils/activityMerger';
 import { getActivityWindow } from '../utils/activityWindow';
 import { logger } from '../logger';
@@ -19,12 +20,16 @@ import { logger } from '../logger';
  * - Activity merging to reduce clutter
  * - Virtual windowing to prevent layout issues (shows last N activities)
  * - Fixed height to prevent pushing other components off screen
+ * - Keyboard-based scrolling through activity history
  */
 export const ContentArea: React.FC<ContentAreaProps> = ({
   activities,
   enableMerging = true,
   mergeConfig,
   maxHeight,
+  scrollOffset,
+  scrollMode,
+  totalActivities,
 }) => {
   const bottomRef = useRef<any>(null);
 
@@ -62,10 +67,18 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     }
   }, [activities, enableMerging, mergeConfig]);
 
-  // Apply virtual windowing to show only the last N activities
+  // Apply virtual windowing with scroll offset
   const activityWindow = useMemo(() => {
-    return getActivityWindow(mergedActivities);
-  }, [mergedActivities]);
+    return getActivityWindow(mergedActivities, scrollOffset);
+  }, [mergedActivities, scrollOffset]);
+
+  // Calculate position range for display (e.g., "45-75 / 156")
+  const currentRange = useMemo(() => {
+    if (activityWindow.totalCount === 0) return '';
+    const start = activityWindow.truncatedCount + 1;
+    const end = start + activityWindow.visibleCount - 1;
+    return `${start}-${end} / ${activityWindow.totalCount}`;
+  }, [activityWindow]);
 
   // Show empty state if no activities
   if (activityWindow.totalCount === 0) {
@@ -97,19 +110,28 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
       paddingX={1}
       paddingY={1}
     >
-      {/* Show truncation indicator when activities are hidden */}
-      {activityWindow.hasMore && (
-        <Box marginBottom={1}>
-          <Text dimColor>
-            ↑ {activityWindow.truncatedCount} earlier activities hidden
-          </Text>
-        </Box>
-      )}
+      {/* Top scroll indicator - shows earlier activities */}
+      <ScrollIndicator
+        position="top"
+        hiddenCount={activityWindow.truncatedCount}
+        isAtEdge={activityWindow.isAtTop}
+      />
 
       {/* Render visible activities */}
-      {activityWindow.activities.map((activity: Activity) => (
-        <ActivityItem key={activity.id} activity={activity} />
-      ))}
+      <Box flexDirection="column" flexGrow={1}>
+        {activityWindow.activities.map((activity: Activity) => (
+          <ActivityItem key={activity.id} activity={activity} />
+        ))}
+      </Box>
+
+      {/* Bottom scroll indicator - shows newer activities and status */}
+      <ScrollIndicator
+        position="bottom"
+        hiddenCount={activityWindow.scrollOffset}
+        isAtEdge={activityWindow.isAtBottom}
+        scrollMode={scrollMode}
+        currentRange={currentRange}
+      />
 
       <Box ref={bottomRef} />
     </Box>
