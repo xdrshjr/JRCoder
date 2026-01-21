@@ -2,7 +2,7 @@
  * TUI App - Main application component with advanced features
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, useApp, Text, useStdout } from 'ink';
 import { v4 as uuid } from 'uuid';
 import { Header } from './Header';
@@ -13,6 +13,7 @@ import { TUIEventBus } from '../event-bus';
 import { useKeyBindings, getKeyBindingsHelpText } from '../hooks/useKeyBindings';
 import { SessionHistoryManager } from '../managers/SessionHistoryManager';
 import { AutoSaveManager } from '../managers/AutoSaveManager';
+import { calculateContentHeight } from '../constants';
 import type { TUIAppProps, TUIState, Activity, AgentPhaseEvent, TUIEvent } from '../types';
 import { logger } from '../logger';
 
@@ -62,6 +63,7 @@ export const TUIApp: React.FC<TUIAppProps> = ({
   const [showHelp, setShowHelp] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isInputMultiline, setIsInputMultiline] = useState(false);
 
   // Managers
   const [historyManager] = useState(() => new SessionHistoryManager({ logger }));
@@ -74,6 +76,13 @@ export const TUIApp: React.FC<TUIAppProps> = ({
         logger,
       })
   );
+
+  /**
+   * Calculate content area height based on terminal height and input mode
+   */
+  const contentHeight = useMemo(() => {
+    return calculateContentHeight(terminalHeight, isInputMultiline);
+  }, [terminalHeight, isInputMultiline]);
 
   /**
    * Initialize managers on mount
@@ -573,7 +582,7 @@ export const TUIApp: React.FC<TUIAppProps> = ({
 
       {/* Content Area */}
       <Box flexGrow={1} paddingY={1}>
-        <ContentArea activities={state.activities} />
+        <ContentArea activities={state.activities} maxHeight={contentHeight} />
       </Box>
 
       {/* Status Bar */}
@@ -596,6 +605,7 @@ export const TUIApp: React.FC<TUIAppProps> = ({
             : 'Type your message and press Enter...'
         }
         disabled={isInputDisabled}
+        onMultilineChange={setIsInputMultiline}
       />
 
       {/* Help Overlay */}

@@ -3,6 +3,7 @@
  */
 
 export * from './types';
+export * from './constants';
 export * from './event-bus';
 export * from './components';
 export * from './adapters';

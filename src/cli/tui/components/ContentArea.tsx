@@ -3,11 +3,12 @@
  */
 
 import React, { useEffect, useRef, useMemo } from 'react';
-import { Box } from 'ink';
+import { Box, Text } from 'ink';
 import type { ContentAreaProps, Activity } from '../types';
 import { ActivityItem } from './ActivityItem';
 import { EmptyState } from './EmptyState';
 import { mergeActivities } from '../utils/activityMerger';
+import { getActivityWindow } from '../utils/activityWindow';
 import { logger } from '../logger';
 
 /**
@@ -16,13 +17,14 @@ import { logger } from '../logger';
  * Features:
  * - Empty state when no activities
  * - Activity merging to reduce clutter
- * - Full-screen display using flexGrow
- * - Shows all activities (terminal handles scrolling)
+ * - Virtual windowing to prevent layout issues (shows last N activities)
+ * - Fixed height to prevent pushing other components off screen
  */
 export const ContentArea: React.FC<ContentAreaProps> = ({
   activities,
   enableMerging = true,
   mergeConfig,
+  maxHeight,
 }) => {
   const bottomRef = useRef<any>(null);
 
@@ -35,7 +37,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
   }, [activities]);
 
   // Apply activity merging to reduce clutter and improve performance
-  const processedActivities = useMemo(() => {
+  const mergedActivities = useMemo(() => {
     if (!enableMerging || activities.length === 0) {
       return activities;
     }
@@ -60,8 +62,13 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     }
   }, [activities, enableMerging, mergeConfig]);
 
+  // Apply virtual windowing to show only the last N activities
+  const activityWindow = useMemo(() => {
+    return getActivityWindow(mergedActivities);
+  }, [mergedActivities]);
+
   // Show empty state if no activities
-  if (processedActivities.length === 0) {
+  if (activityWindow.totalCount === 0) {
     return (
       <Box
         flexDirection="column"
@@ -77,14 +84,33 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
 
   logger.debug('ContentArea rendering', {
     type: 'content_area_render',
-    totalActivities: processedActivities.length,
+    totalActivities: activityWindow.totalCount,
+    visibleActivities: activityWindow.visibleCount,
+    truncatedActivities: activityWindow.truncatedCount,
   });
 
   return (
-    <Box flexDirection="column" flexGrow={1} paddingX={1} paddingY={1}>
-      {processedActivities.map((activity: Activity) => (
+    <Box
+      flexDirection="column"
+      height={maxHeight}
+      overflow="hidden"
+      paddingX={1}
+      paddingY={1}
+    >
+      {/* Show truncation indicator when activities are hidden */}
+      {activityWindow.hasMore && (
+        <Box marginBottom={1}>
+          <Text dimColor>
+            ↑ {activityWindow.truncatedCount} earlier activities hidden
+          </Text>
+        </Box>
+      )}
+
+      {/* Render visible activities */}
+      {activityWindow.activities.map((activity: Activity) => (
         <ActivityItem key={activity.id} activity={activity} />
       ))}
+
       <Box ref={bottomRef} />
     </Box>
   );

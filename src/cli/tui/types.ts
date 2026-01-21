@@ -372,6 +372,8 @@ export interface ContentAreaProps {
     enableMerging?: boolean;
     enableTrimming?: boolean;
   };
+  /** Maximum height in terminal lines (for layout constraint) */
+  maxHeight?: number;
 }
 
 /**
@@ -408,6 +410,8 @@ export interface AdvancedInputProps {
   history?: string[];
   placeholder?: string;
   disabled?: boolean;
+  /** Callback when multiline mode changes */
+  onMultilineChange?: (isMultiline: boolean) => void;
 }
 
 /**

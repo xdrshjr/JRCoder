@@ -16,6 +16,8 @@ import type {
   PhaseChangeActivity,
   AnswerActivity,
 } from '../types';
+import { ACTIVITY_DISPLAY } from '../constants';
+import { truncateText, getLineWindow } from '../utils/activityWindow';
 
 /**
  * Main ActivityItem component that routes to specific activity renderers
@@ -54,11 +56,14 @@ const ThinkingActivityItem: React.FC<{ activity: ThinkingActivity }> = ({ activi
         ? 'Reflecting'
         : 'Thinking';
 
+  // Truncate long thinking content to prevent layout issues
+  const content = truncateText(activity.content);
+
   return (
     <Box paddingLeft={1} flexDirection="column">
       <Box>
         <Text color="gray">\u2022 [{sourceLabel}] </Text>
-        <Text>{activity.content}</Text>
+        <Text>{content}</Text>
       </Box>
     </Box>
   );
@@ -85,11 +90,27 @@ const ToolCallActivityItem: React.FC<{ activity: ToolCallActivity }> = ({ activi
         </Box>
       )}
 
-      {activity.status === 'completed' && activity.result && (
-        <Box paddingLeft={2}>
-          <Text color="green">\u2713 {activity.result}</Text>
-        </Box>
-      )}
+      {activity.status === 'completed' && activity.result && (() => {
+        const resultWindow = getLineWindow(
+          activity.result,
+          ACTIVITY_DISPLAY.MAX_TOOL_RESULT_LINES
+        );
+        return (
+          <Box paddingLeft={2} flexDirection="column">
+            {resultWindow.hasMore && (
+              <Text dimColor>↓ Showing first {ACTIVITY_DISPLAY.MAX_TOOL_RESULT_LINES} of {resultWindow.totalLines} lines</Text>
+            )}
+            {resultWindow.lines.map((line: string, index: number) => (
+              <Text key={index} color="green">
+                {line}
+              </Text>
+            ))}
+            {resultWindow.hasMore && (
+              <Text dimColor>↓ {resultWindow.hiddenLines} more lines hidden</Text>
+            )}
+          </Box>
+        );
+      })()}
 
       {activity.status === 'failed' && activity.error && (
         <Box paddingLeft={2}>
@@ -121,18 +142,24 @@ const BashActivityItem: React.FC<{ activity: BashActivity }> = ({ activity }) =>
         </Box>
       )}
 
-      {activity.output && (
-        <Box paddingLeft={2} flexDirection="column">
-          {activity.output
-            .split('\n')
-            .slice(0, 10)
-            .map((line: string, index: number) => (
+      {activity.output && (() => {
+        const outputWindow = getLineWindow(
+          activity.output,
+          ACTIVITY_DISPLAY.MAX_BASH_OUTPUT_LINES
+        );
+        return (
+          <Box paddingLeft={2} flexDirection="column">
+            {outputWindow.hasMore && (
+              <Text dimColor>↓ Showing last {ACTIVITY_DISPLAY.MAX_BASH_OUTPUT_LINES} of {outputWindow.totalLines} lines</Text>
+            )}
+            {outputWindow.lines.map((line: string, index: number) => (
               <Text key={index} dimColor>
                 {line}
               </Text>
             ))}
-        </Box>
-      )}
+          </Box>
+        );
+      })()}
 
       {activity.status === 'completed' && activity.exitCode !== undefined && (
         <Box paddingLeft={2}>

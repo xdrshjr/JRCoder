@@ -5,6 +5,7 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { AdvancedInputProps } from '../types';
+import { ACTIVITY_DISPLAY } from '../constants';
 import { logger } from '../logger';
 
 /**
@@ -15,6 +16,7 @@ export const AdvancedInput: React.FC<AdvancedInputProps> = ({
   history = [],
   placeholder = 'Type your message...',
   disabled = false,
+  onMultilineChange,
 }) => {
   const [value, setValue] = useState('');
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -36,10 +38,16 @@ export const AdvancedInput: React.FC<AdvancedInputProps> = ({
       onSubmit(trimmed);
       setValue('');
       setHistoryIndex(-1);
-      setIsMultiline(false);
+
+      // Reset multiline mode and notify parent
+      if (isMultiline) {
+        setIsMultiline(false);
+        onMultilineChange?.(false);
+      }
+
       setCursorPosition(0);
     }
-  }, [value, isMultiline, onSubmit]);
+  }, [value, isMultiline, onSubmit, onMultilineChange]);
 
   /**
    * Navigate to previous history item
@@ -89,12 +97,14 @@ export const AdvancedInput: React.FC<AdvancedInputProps> = ({
    * Toggle multiline mode
    */
   const toggleMultiline = useCallback(() => {
-    setIsMultiline((prev) => !prev);
+    const newMultiline = !isMultiline;
+    setIsMultiline(newMultiline);
+    onMultilineChange?.(newMultiline);
     logger.debug('Toggled multiline mode', {
       type: 'multiline_toggle',
-      isMultiline: !isMultiline,
+      isMultiline: newMultiline,
     });
-  }, [isMultiline]);
+  }, [isMultiline, onMultilineChange]);
 
   /**
    * Handle keyboard input
@@ -154,20 +164,41 @@ export const AdvancedInput: React.FC<AdvancedInputProps> = ({
   );
 
   /**
-   * Render multiline content with line numbers
+   * Render multiline content with line numbers (max 10 lines visible)
    */
   const renderMultilineContent = () => {
     const lines = value.split('\n');
+    const totalLines = lines.length;
+    const maxLines = ACTIVITY_DISPLAY.MAX_INPUT_LINES;
+    const hasMore = totalLines > maxLines;
+
+    // Show last N lines if there are too many
+    const visibleLines = hasMore ? lines.slice(-maxLines) : lines;
+    const hiddenLines = Math.max(0, totalLines - maxLines);
+
     return (
       <Box flexDirection="column" paddingLeft={1}>
-        {lines.map((line, index) => (
-          <Box key={index}>
-            <Text dimColor>{String(index + 1).padStart(2, ' ')}│ </Text>
-            <Text>{line || ' '}</Text>
+        {/* Truncation indicator */}
+        {hasMore && (
+          <Box>
+            <Text dimColor>↑ {hiddenLines} lines hidden</Text>
           </Box>
-        ))}
+        )}
+
+        {/* Visible lines */}
+        {visibleLines.map((line, index) => {
+          const lineNumber = hasMore ? totalLines - maxLines + index + 1 : index + 1;
+          return (
+            <Box key={index}>
+              <Text dimColor>{String(lineNumber).padStart(2, ' ')}│ </Text>
+              <Text>{line || ' '}</Text>
+            </Box>
+          );
+        })}
+
+        {/* Cursor line */}
         <Box>
-          <Text dimColor>{String(lines.length + 1).padStart(2, ' ')}│ </Text>
+          <Text dimColor>{String(totalLines + 1).padStart(2, ' ')}│ </Text>
           <Text>_</Text>
         </Box>
       </Box>

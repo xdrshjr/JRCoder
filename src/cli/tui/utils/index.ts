@@ -3,3 +3,4 @@
  */
 
 export * from './activityMerger';
+export * from './activityWindow';
